@@ -1,15 +1,15 @@
 class Workspace
-	IGNORE = ['.', '..', '.git']
+  IGNORE = ['.', '..', '.git'].freeze
 
-	def initialize(pathname)
-		@pathname = pathname
-	end
+  def initialize(pathname)
+    @pathname = pathname
+  end
 
-	def list_files
-		Dir.entries(@pathname) - IGNORE
-	end
+  def list_files
+    Dir.entries(@pathname) - IGNORE
+  end
 
-	def read_file(path)
-		File.read(@pathname.join(path))
-	end
+  def read_file(path)
+    File.read(@pathname.join(path))
+  end
 end
