@@ -6,6 +6,7 @@ require_relative './entry'
 require_relative './tree'
 require_relative './author'
 require_relative './commit'
+require_relative './refs'
 
 command = ARGV.shift
 
@@ -32,6 +33,7 @@ when 'commit'
 
   workspace = Workspace.new(root_path)
   database = Database.new(db_path)
+  refs = Refs.new(git_path)
 
   entries = workspace.list_files.map do |path|
     data = workspace.read_file(path)
@@ -45,20 +47,19 @@ when 'commit'
   tree = Tree.new(entries)
   database.store(tree)
 
+  parent = refs.read_head
   name = ENV.fetch('GIT_AUTHOR_NAME')
   email = ENV.fetch('GIT_AUTHOR_EMAIL')
-  author = Author.new(name, email, Time.now)
+  author = Author.new(name, email, Time.now.utc)
   message = $stdin.read
 
-  commit = Commit.new(tree.oid, author, message)
+  commit = Commit.new(parent, tree.oid, author, message)
   database.store(commit)
+  refs.update_head(commit.oid)
 
-	File.open(git_path.join('HEAD'), File::WRONLY | File::CREAT) do |file|
-		file.puts(commit.oid)
-	end
-
-	puts "[(root-commit) #{commit.oid}] #{message.lines.first}"
-	exit 0
+  is_root = parent.nil? ? '(root-commit) ' : ''
+  puts "[#{is_root}#{commit.oid}] #{message.lines.first}"
+  exit 0
 else
   warn "jit: '#{command}' is not a JIT command."
   exit 1
