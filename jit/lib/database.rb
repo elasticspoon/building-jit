@@ -1,7 +1,7 @@
 require 'digest/sha1'
 require 'zlib'
 
-require_relative './blob'
+require './lib/database/blob'
 
 class Database
   TEMP_CHARS = ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a
@@ -39,7 +39,6 @@ class Database
     file.write(compressed)
     file.close
 
-    # puts "renaming #{temp_path} to #{object_path}"
     File.rename(temp_path, object_path)
   end
 
