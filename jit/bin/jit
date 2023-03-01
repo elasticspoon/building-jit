@@ -2,14 +2,14 @@
 
 require 'fileutils'
 require 'pathname'
-require './lib/workspace'
-require './lib/database'
-require './lib/entry'
-require './lib/database/tree'
-require './lib/database/author'
-require './lib/database/commit'
-require './lib/refs'
-require './lib/index'
+require_relative '../lib/workspace'
+require_relative '../lib/database'
+require_relative '../lib/entry'
+require_relative '../lib/database/tree'
+require_relative '../lib/database/author'
+require_relative '../lib/database/commit'
+require_relative '../lib/refs'
+require_relative '../lib/index'
 
 command = ARGV.shift
 
@@ -33,22 +33,26 @@ when 'commit'
   root_path = Pathname.new(Dir.getwd)
   git_path = root_path.join('.git')
   db_path = git_path.join('objects')
+  index_path = git_path.join('index')
 
   workspace = Workspace.new(root_path)
   database = Database.new(db_path)
   refs = Refs.new(git_path)
+  index = Index.new(index_path)
 
-  entries = workspace.list_files.map do |path|
-    data = workspace.read_file(path)
-    blob = Database::Blob.new(data)
+  index.load
 
-    database.store(blob)
+  # entries = workspace.list_files.map do |path|
+  #   data = workspace.read_file(path)
+  #   blob = Database::Blob.new(data)
 
-    stat = workspace.stat_file(path)
-    Entry.new(path, blob.oid, stat)
-  end
+  #   database.store(blob)
 
-  root = Database::Tree.build(entries)
+  #   stat = workspace.stat_file(path)
+  #   Entry.new(path, blob.oid, stat)
+  # end
+
+  root = Database::Tree.build(index.each_entry)
   root.traverse { |tree| database.store(tree) }
 
   parent = refs.read_head
@@ -74,17 +78,44 @@ when 'add'
   database = Database.new(db_path)
   index = Index.new(index_path)
 
-  ARGV.each do |path_input|
-    path = Pathname.new(File.expand_path(path_input))
+  begin
+    index.load_for_update
+  rescue Lockfile::LockDenied => e
+    warn <<~ERROR
+      fatal: #{e.message}
 
-    workspace.list_files(path).each do |pathname|
-      data = workspace.read_file(pathname)
-      stat = workspace.stat_file(pathname)
+      Another git process seems to be running in this repository, e.g.
+      an editor opened by 'git commit'. Please make sure all processes
+      are terminated then try again. If it still fails, a git process
+      may have crashed in this repository earlier:
+      remove the file manually to continue.
+    ERROR
+    exit 128
+  end
 
-      blob = Database::Blob.new(data)
-      database.store(blob)
-      index.add(pathname, blob.oid, stat)
+  begin
+    paths = ARGV.flat_map do |path_input|
+      path = Pathname.new(File.expand_path(path_input))
+      workspace.list_files(path)
     end
+  rescue Workspace::MissingFile => e
+    warn "fatal: #{e.message}"
+    index.release_lock
+    exit 128
+  end
+
+  paths.each do |pathname|
+    data = workspace.read_file(pathname)
+    stat = workspace.stat_file(pathname)
+
+    blob = Database::Blob.new(data)
+    database.store(blob)
+    index.add(pathname, blob.oid, stat)
+  rescue Workspace::NoPermission => e
+    warn "error: #{e.message}"
+    warn 'fatal: adding files failed'
+    index.release_lock
+    exit 128
   end
 
   index.write_updates

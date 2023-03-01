@@ -8,8 +8,8 @@ class Index
   entry_fields = %i[ctime ctime_nsec mtime mtime_nsec dev ino mode uid gid size oid flags path]
 
   Entry = Struct.new(*entry_fields) do
-    def self.create(pathname, oid, stat)
-      path = pathname.to_s
+    def self.create(file_path, oid, stat)
+      path = file_path.to_s
       mode = stat.executable? ? EXECUTABLE_MODE : REGULAR_MODE
       flags = [path.bytesize, MAX_PATH_SIZE].min
 
@@ -38,6 +38,24 @@ class Index
 
     def key
       path
+    end
+
+    def self.parse(data)
+      Entry.new(*data.unpack(ENTRY_FORMAT))
+    end
+
+    def parent_directories
+      pathname.descend.to_a[...-1]
+    end
+
+    def basename # rubocop:disable Rails/Delegate
+      pathname.basename
+    end
+
+    private
+
+    def pathname
+      Pathname.new(path)
     end
   end
 end

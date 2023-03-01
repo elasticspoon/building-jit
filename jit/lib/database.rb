@@ -1,7 +1,7 @@
 require 'digest/sha1'
 require 'zlib'
 
-require './lib/database/blob'
+require_relative '../lib/database/blob'
 
 class Database
   TEMP_CHARS = ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a

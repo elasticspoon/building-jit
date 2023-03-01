@@ -1,37 +1,162 @@
 require 'digest/sha1'
 require 'set'
 
-require_relative './index/entry'
-require_relative './lockfile'
+require_relative '../lib/index/entry'
+require_relative '../lib/index/checksum'
+require_relative '../lib/lockfile'
 
 class Index
   HEADER_FORMAT = 'a4N2'.freeze
+  HEADER_SIZE = 12
+  VERSION = 2
+  SIGNATURE = 'DIRC'.freeze
+
+  ENTRY_SIZE = 64
 
   def initialize(pathname)
+    @pathname = pathname
     @entries = {}
+    @parents = {}
     @keys = Set.new
     @lockfile = Lockfile.new(pathname)
   end
 
   def add(pathname, oid, stat)
     entry = Entry.create(pathname, oid, stat)
-    @keys.add(entry.key)
-    @entries[pathname.to_s] = entry
+    discard_conflicts(entry)
+    store_entry(entry)
+    @changed = true
   end
 
   def write_updates
-    return false unless @lockfile.hold_for_update
+    return @lockfile.rollback unless @changed
 
-    begin_write
-    header = ['DIRC', 2, @entries.size].pack(HEADER_FORMAT)
-    write(header)
-    each_entry { |data| write(data.to_s) }
-    finish_write
+    writer = Checksum.new(@lockfile)
+    header = [SIGNATURE, VERSION, @entries.size].pack(HEADER_FORMAT)
 
-    true
+    writer.write(header)
+    each_entry { |data| writer.write(data.to_s) }
+    writer.write_checksum
+
+    @lockfile.commit
+
+    @changed = false
+  end
+
+  def load_for_update
+    @lockfile.hold_for_update
+    load
+  end
+
+  def load
+    clear
+    file = open_index_file
+
+    if file
+      reader = Checksum.new(file)
+      count = read_header(reader)
+      read_entries(reader, count)
+      reader.verify_checksum
+    end
+  ensure
+    file&.close
+  end
+
+  def each_entry
+    if block_given?
+      @keys.sort.each { |key| yield @entries[key] }
+    else
+      enum_for(:each_entry)
+    end
+  end
+
+  def release_lock
+    @lockfile.rollback
   end
 
   private
+
+  def add_parents(entry)
+    entry.parent_directories.each do |parent|
+      (@parents[parent.to_s] ||= Set.new) << entry.key
+    end
+  end
+
+  def discard_conflicts(entry)
+    entry.parent_directories.each { |dir_name| remove_entry(dir_name) }
+    remove_children(entry.path)
+  end
+
+  def remove_children(parent_path)
+    @parents.clone[parent_path]&.each { |child| remove_entry(child) }
+  end
+
+  def remove_entry(path)
+    entry = @entries[path.to_s]
+    return if entry.nil?
+
+    @keys.delete(entry.key)
+    @entries.delete(entry.key)
+
+    entry.parent_directories.each do |dirname|
+      dir = dirname.to_s
+      @parents[dir].delete(entry.path)
+      @parents.delete(dir) if @parents[dir].empty?
+    end
+  end
+
+  # def discard_nested_conflicts(entry)
+  #   file_name = entry.key
+  #   removal = []
+  #   @entries.each_value do |file|
+  #     file.parent_directories.each do |parent|
+  #       removal.push(file) if parent.to_s == file_name
+  #     end
+  #   end
+
+  #   removal.each do |value|
+  #     @keys.delete(value.key)
+  #     @entries.delete(value.key)
+  #   end
+  # end
+
+  def clear
+    @entries = {}
+    @parents = {}
+    @keys = Set.new
+    @changed = false
+  end
+
+  def read_entries(reader, count)
+    count.times do
+      data = reader.read(ENTRY_SIZE)
+      data.concat(reader.read(ENTRY_BLOCK)) until data.byteslice(-1) == "\0"
+
+      store_entry(Entry.parse(data))
+    end
+  end
+
+  def store_entry(entry)
+    @keys.add(entry.key)
+    @entries[entry.key] = entry
+    add_parents(entry)
+  end
+
+  def read_header(reader)
+    data = reader.read(HEADER_SIZE)
+    signature, version, count = data.unpack(HEADER_FORMAT)
+
+    raise Invalid, "Signature: expected #{SIGNATURE} but found #{signature}" if signature != SIGNATURE
+    raise Invalid, "Version: expected #{VERSION} but found #{version}" if version != VERSION
+
+    count
+  end
+
+  def open_index_file
+    File.open(@pathname, File::RDONLY)
+  rescue Errno::ENOENT
+    nil
+  end
 
   def begin_write
     @index_hash = Digest::SHA1.new
@@ -45,9 +170,5 @@ class Index
   def write(data)
     @lockfile.write(data)
     @index_hash.update(data)
-  end
-
-  def each_entry
-    @keys.sort.each { |key| yield @entries[key] }
   end
 end
