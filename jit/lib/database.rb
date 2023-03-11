@@ -1,7 +1,11 @@
 require 'digest/sha1'
+require 'fileutils'
 require 'zlib'
 
-require_relative '../lib/database/blob'
+require_relative './database/blob'
+require_relative './database/commit'
+require_relative './database/tree'
+require_relative './database/author'
 
 class Database
   TEMP_CHARS = ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a
@@ -11,14 +15,26 @@ class Database
   end
 
   def store(object)
-    string = object.to_s.force_encoding(Encoding::ASCII_8BIT)
-    content = "#{object.type} #{string.bytesize}\0#{string}"
+    content = serialize_object(object)
+    object.oid = hash_content(content)
 
-    object.oid = Digest::SHA1.hexdigest(content)
     write_object(object.oid, content)
   end
 
+  def hash_object(object)
+    hash_content(serialize_object(object))
+  end
+
   private
+
+  def serialize_object(object)
+    string = object.to_s.force_encoding(Encoding::ASCII_8BIT)
+    "#{object.type} #{string.bytesize}\0#{string}"
+  end
+
+  def hash_content(string)
+    Digest::SHA1.hexdigest(string)
+  end
 
   def write_object(oid, content)
     object_path = @pathname.join(oid[0..1], oid[2..])
@@ -31,7 +47,7 @@ class Database
       flags = File::RDWR | File::CREAT | File::EXCL
       file = File.open(temp_path, flags)
     rescue Errno::ENOENT
-      Dir.mkdir(dirname)
+      FileUtils.mkdir_p(dirname)
       file = File.open(temp_path, flags)
     end
 

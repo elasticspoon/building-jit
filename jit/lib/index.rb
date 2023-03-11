@@ -1,5 +1,5 @@
 require 'digest/sha1'
-require 'set'
+require 'sorted_set'
 
 require_relative '../lib/index/entry'
 require_relative '../lib/index/checksum'
@@ -17,7 +17,7 @@ class Index
     @pathname = pathname
     @entries = {}
     @parents = {}
-    @keys = Set.new
+    @keys = SortedSet.new
     @lockfile = Lockfile.new(pathname)
   end
 
@@ -64,7 +64,7 @@ class Index
 
   def each_entry
     if block_given?
-      @keys.sort.each { |key| yield @entries[key] }
+      @keys.each { |key| yield @entries[key] }
     else
       enum_for(:each_entry)
     end
@@ -72,6 +72,16 @@ class Index
 
   def release_lock
     @lockfile.rollback
+  end
+
+  def tracked?(path)
+    path = path.to_s
+    @entries.key?(path) || @parents.key?(path)
+  end
+
+  def update_entry_stat(entry, stat)
+    entry.update_stat(stat)
+    @changed = true
   end
 
   private
@@ -88,7 +98,8 @@ class Index
   end
 
   def remove_children(parent_path)
-    @parents.clone[parent_path]&.each { |child| remove_entry(child) }
+    children_set = @parents.clone[parent_path]
+    children_set&.each { |child| remove_entry(child) }
   end
 
   def remove_entry(path)
@@ -105,25 +116,10 @@ class Index
     end
   end
 
-  # def discard_nested_conflicts(entry)
-  #   file_name = entry.key
-  #   removal = []
-  #   @entries.each_value do |file|
-  #     file.parent_directories.each do |parent|
-  #       removal.push(file) if parent.to_s == file_name
-  #     end
-  #   end
-
-  #   removal.each do |value|
-  #     @keys.delete(value.key)
-  #     @entries.delete(value.key)
-  #   end
-  # end
-
   def clear
     @entries = {}
     @parents = {}
-    @keys = Set.new
+    @keys = SortedSet.new
     @changed = false
   end
 

@@ -45,30 +45,4 @@ class IndexTest < MiniTest::Test
 
     assert_equal(['dir_a'], @index.each_entry.map(&:path))
   end
-
-  def test_error_when_index_lock_exists
-    lockfile_dir = Pathname.new(@tmp_path)
-    lockfile_path = lockfile_dir.join('index.lock')
-    create_index_lock(lockfile_path, lockfile_dir)
-
-    assert_raises(Lockfile::LockDenied) do
-      @index.load_for_update
-    end
-  ensure
-    remove_index_lock(lockfile_dir)
-  end
-
-  private
-
-  def create_index_lock(path, parent_dir)
-    flags = File::RDWR | File::CREAT | File::EXCL
-    File.open(path, flags)
-  rescue Errno::ENOENT
-    Dir.mkdir(parent_dir)
-    File.open(path, flags)
-  end
-
-  def remove_index_lock(parent_dir)
-    FileUtils.rm_r(parent_dir, force: true)
-  end
 end

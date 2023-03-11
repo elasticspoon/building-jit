@@ -31,4 +31,17 @@ class Workspace
   rescue Errno::EACCES
     raise NoPermission, "stat('#{path}'): Permission denied"
   end
+
+  def list_dir(dir_path)
+    path = @pathname.join(dir_path || '')
+    entries = Dir.entries(path) - IGNORE
+    stats = {}
+
+    entries.each do |entry|
+      relative = path.join(entry).relative_path_from(@pathname)
+      stats[relative.to_s] = File.stat(path.join(entry))
+    end
+
+    stats
+  end
 end
