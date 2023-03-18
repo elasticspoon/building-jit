@@ -55,15 +55,16 @@ class StatusTest < MiniTest::Test
   end
 
   def test_lists_untracked_dir_contents_when_some_tracked
-    write_file('a/b/a.txt', 'hello')
-    jit_cmd('add', 'a/b/a.txt')
+    write_file('a/b/inner.txt', 'hello')
+    jit_cmd('add', 'a/b/inner.txt')
+    commit('message')
 
-    write_file('a/b/b.txt', 'hello')
-    write_file('a/b/c/a.txt', 'hello')
+    write_file('a/outer.txt', 'hello')
+    write_file('a/b/c/file.txt', 'hello')
 
     assert_repo_status(<<~STATUS
-      ?? a/b/b.txt
       ?? a/b/c/
+      ?? a/outer.txt
     STATUS
                       )
     assert_status 0
@@ -144,6 +145,9 @@ class WorkspaceChangesTest < MiniTest::Test
   end
 
   def test_shows_file_changed_with_same_size
+    sleep 0.0001
+    # added the sleep because in certain situations the file
+    # the file would be created and modded in the same time according to stat
     write_file('1.txt', '2')
 
     assert_repo_status(<<-STATUS
@@ -176,6 +180,90 @@ class WorkspaceChangesTest < MiniTest::Test
     assert_repo_status(<<-STATUS
  D a/2.txt
  D a/b/3.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+end
+
+class IndexHeadChangesTest < MiniTest::Test
+  include CommandHelper
+  alias old_setup setup
+
+  def setup
+    old_setup # some intial setup is done with a on include hook in command helper
+    write_file('1.txt', 'one')
+    write_file('a/2.txt', 'two')
+    write_file('a/b/3.txt', 'three')
+
+    jit_cmd('add', '.')
+    commit('first commit')
+  end
+
+  def test_lists_file_as_added
+    write_file('a/4.txt', 'four')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      A  a/4.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+
+  def test_lists_dir_untracked_file_added
+    write_file('d/e/5.txt', 'five')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      A  d/e/5.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+
+  def test_reports_modified_modes
+    make_executable('1.txt')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      M  1.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+
+  def test_reports_modified_contents
+    write_file('a/b/3.txt', 'something else')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      M  a/b/3.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+
+  def test_reports_deleted_files
+    delete('1.txt')
+    delete('.git/index')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      D  1.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+
+  def test_reports_deleted_directories
+    delete('a')
+    delete('.git/index')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      D  a/2.txt
+      D  a/b/3.txt
     STATUS
                       )
     assert_status 0

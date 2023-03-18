@@ -75,8 +75,11 @@ class Index
   end
 
   def tracked?(path)
-    path = path.to_s
-    @entries.key?(path) || @parents.key?(path)
+    tracked_file?(path) || @parents.key?(path.to_s)
+  end
+
+  def tracked_file?(path)
+    @entries.key?(path.to_s)
   end
 
   def update_entry_stat(entry, stat)

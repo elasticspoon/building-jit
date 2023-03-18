@@ -12,7 +12,9 @@ module Command
       repo.index.load_for_update
 
       scan_workspace
-      detect_workspace_changes
+      load_head_tree
+      check_index_entries
+      collect_deleted_head_files
 
       repo.index.write_updates
 
@@ -23,19 +25,52 @@ module Command
 
     private
 
+    def collect_deleted_head_files
+      deleted_paths = @head_tree.keys.reject { |path| repo.index.tracked_file?(path) }
+      deleted_paths.each { |path| record_change(path, :index_deleted) }
+    end
+
     def print_results
       @changed.each { |path| puts "#{status_for_path(path)} #{path}" }
       @untracked.each { |path| puts "?? #{path}" }
     end
 
+    def load_head_tree
+      @head_tree = {}
+
+      head_oid = repo.refs.read_head
+      return unless head_oid
+
+      head_commit = repo.database.load(head_oid)
+      read_tree(head_commit.tree)
+    end
+
+    def read_tree(tree_oid, pathname=Pathname.new(''))
+      tree = repo.database.load(tree_oid)
+
+      tree.entries.each do |name, entry|
+        entry_path = pathname.join(name)
+        if entry.tree?
+          read_tree(entry.oid, entry_path)
+        else
+          @head_tree[entry_path.to_s] = entry
+        end
+      end
+    end
+
     def status_for_path(path)
       changes = @changes[path]
 
-      status = '  '
-      status = ' D' if changes.include?(:workspace_deleted)
-      status = ' M' if changes.include?(:workspace_modified)
+      left = ' '
+      left = 'A' if changes.include?(:index_added)
+      left = 'M' if changes.include?(:index_modified)
+      left = 'D' if changes.include?(:index_deleted)
 
-      status
+      right = ' '
+      right = 'D' if changes.include?(:workspace_deleted)
+      right = 'M' if changes.include?(:workspace_modified)
+
+      left + right
     end
 
     def scan_workspace(prefix=nil)
@@ -50,13 +85,27 @@ module Command
       end
     end
 
-    def detect_workspace_changes
-      repo.index.each_entry { |entry| check_index_entry(entry) }
+    def check_index_entries
+      repo.index.each_entry do |entry|
+        check_entry_against_workspace(entry)
+        check_entry_against_head(entry)
+      end
     end
 
-    def check_index_entry(entry)
-      stat = @stats[entry.path]
+    def check_entry_against_head(entry)
+      commited_entry = @head_tree[entry.path]
 
+      if commited_entry
+        unless commited_entry.oid == entry.oid && commited_entry.mode == entry.mode
+          record_change(entry.path, :index_modified)
+        end
+      else
+        record_change(entry.path, :index_added)
+      end
+    end
+
+    def check_entry_against_workspace(entry)
+      stat = @stats[entry.path]
       return record_change(entry.path, :workspace_deleted) unless stat
       return record_change(entry.path, :workspace_modified) unless entry.stat_match?(stat)
       return if entry.times_match?(stat)

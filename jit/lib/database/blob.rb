@@ -1,6 +1,6 @@
 class Database
   class Blob
-    attr_accessor :oid
+    attr_accessor :oid, :data
 
     def initialize(data)
       @data = data
@@ -12,6 +12,10 @@ class Database
 
     def to_s
       @data
+    end
+
+    def self.parse(scanner)
+      Blob.new(scanner.rest)
     end
   end
 end
