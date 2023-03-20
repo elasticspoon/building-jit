@@ -54,6 +54,15 @@ class AddTest < MiniTest::Test
     assert_index([[0o100644, 'dir/a.txt'], [0o100644, 'dir/b.txt']])
   end
 
+  def test_add_directory_contents_to_index_other_format
+    write_file('dir/a.txt', 'hello')
+    write_file('dir/b.txt', 'hello')
+
+    jit_cmd('add', 'dir/')
+
+    assert_index([[0o100644, 'dir/a.txt'], [0o100644, 'dir/b.txt']])
+  end
+
   def test_add_root_dir_to_index
     write_file('dir_a/a.txt', 'hello')
     write_file('dir_a/dir_b/b.txt', 'hello')
@@ -99,6 +108,67 @@ class AddTest < MiniTest::Test
     ERROR
                  )
     assert_index([])
+  end
+
+  def test_add_file_deletion_to_index
+    write_file('a.txt', 'hello')
+    jit_cmd('add', '.')
+    commit('initial')
+    delete('a.txt')
+
+    assert_index([[0o100644, 'a.txt']])
+
+    jit_cmd('add', '.')
+
+    assert_index([])
+    assert_status(0)
+    assert_stdout('')
+    assert_stderr('')
+  end
+
+  def test_remove_specific_file_from_index
+    write_file('a.txt', 'hello')
+    jit_cmd('add', '.')
+    commit('initial')
+    delete('a.txt')
+
+    jit_cmd('add', 'a.txt')
+
+    assert_stderr('')
+    assert_index([])
+    assert_status(0)
+    assert_stdout('')
+  end
+
+  def test_remove_specific_dir_from_index
+    write_file('a/a.txt', 'hello')
+    write_file('a/b.txt', 'hello')
+    jit_cmd('add', '.')
+    commit('initial')
+    delete('a')
+
+    jit_cmd('add', 'a/')
+
+    assert_stderr('')
+    assert_index([])
+    assert_status(0)
+    assert_stdout('')
+  end
+
+  def test_remove_file_in_dir_from_index
+    write_file('a/a.txt', 'hello')
+    write_file('a/b.txt', 'hello')
+    jit_cmd('add', '.')
+    commit('initial')
+    delete('a/a.txt')
+    delete('a/b.txt')
+
+    jit_cmd('add', 'a/')
+
+    assert_stderr('')
+    assert_index([])
+    assert_status(0)
+    assert_stdout('')
   end
 
   def test_locked_index_file

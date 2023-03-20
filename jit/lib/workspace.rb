@@ -3,6 +3,8 @@ class Workspace
   MissingFile = Class.new(StandardError)
   NoPermission = Class.new(StandardError)
 
+  attr_reader :pathname
+
   def initialize(pathname)
     @pathname = pathname
   end

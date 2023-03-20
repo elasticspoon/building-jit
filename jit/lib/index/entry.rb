@@ -80,8 +80,6 @@ class Index
       self.size = stat.size
     end
 
-    private
-
     def pathname
       Pathname.new(path)
     end

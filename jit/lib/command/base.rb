@@ -1,5 +1,6 @@
 require 'pathname'
 require_relative '../repository'
+require_relative '../color'
 
 module Command
   class Base
@@ -38,6 +39,14 @@ module Command
 
     def repo
       @repo ||= Repository.new(Pathname.new(@dir).join('.git'))
+    end
+
+    def fmt(string, style)
+      @stdout.isatty ? Color.format(string, style) : string
+    end
+
+    def workspace_path
+      repo.workspace.pathname
     end
   end
 end

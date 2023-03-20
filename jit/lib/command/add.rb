@@ -12,7 +12,9 @@ module Command
 
     def run
       repo.index.load_for_update
-      expanded_paths.each { |pathname| add_path_to_index(pathname) }
+
+      queried_files.each { |pathname| add_path_to_index(pathname) }
+
       repo.index.write_updates
 
       exit 0
@@ -55,10 +57,27 @@ module Command
       repo.index.add(pathname, blob.oid, stat)
     end
 
-    def expanded_paths
-      @args.flat_map do |path_input|
-        path = expanded_pathname(path_input)
-        repo.workspace.list_files(path)
+    def expanded_arg_paths
+      @args.map do |path_input|
+        target_path = Pathname.new(path_input.chomp('/'))
+        full_path = expanded_pathname(path_input)
+
+        [target_path, full_path]
+      end
+    end
+
+    def queried_files
+      expanded_arg_paths.flat_map do |target_path, target_path_full|
+        repo.workspace.list_files(target_path_full)
+      rescue Workspace::MissingFile => e
+        # reraise exception if trying to add a bad file
+        # -> the file or dir is missing and not in index
+        raise e unless repo.index.tracked?(target_path)
+
+        []
+      ensure
+        # remove files in target path from index if nonexistent
+        repo.index.delete_nonexistent_entries(target_path, workspace_path)
       end
     end
   end

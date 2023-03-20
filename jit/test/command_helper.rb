@@ -99,7 +99,7 @@ module CommandHelper
   end
 
   def assert_repo_status(expected)
-    jit_cmd('status')
+    jit_cmd('status', '--porcelain')
     assert_stdout(expected)
   end
 

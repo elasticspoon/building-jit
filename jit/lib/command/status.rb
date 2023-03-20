@@ -1,13 +1,29 @@
 require_relative './base'
-require 'sorted_set'
+require_relative '../sorted_hash'
 
 module Command
   class Status < Base
+    PORCELAIN_STATUS = {
+      added: 'A',
+      deleted: 'D',
+      modified: 'M'
+    }.freeze
+
+    LONG_STATUS = {
+      added: 'new file:',
+      deleted: 'deleted:',
+      modified: 'modified:'
+    }.freeze
+
+    LABEL_WIDTH = 12
+
     def run
       @stats = {}
       @untracked = SortedSet.new
       @changed = SortedSet.new
       @changes = {}
+      @workspace_changes = SortedHash.new
+      @index_changes = SortedHash.new
 
       repo.index.load_for_update
 
@@ -26,13 +42,54 @@ module Command
     private
 
     def collect_deleted_head_files
-      deleted_paths = @head_tree.keys.reject { |path| repo.index.tracked_file?(path) }
-      deleted_paths.each { |path| record_change(path, :index_deleted) }
+      @head_tree.each_key do |path|
+        record_change(path, @index_changes, :deleted) unless repo.index.tracked_file?(path)
+      end
     end
 
     def print_results
+      if @args.first == '--porcelain'
+        print_porcelain_format
+      else
+        print_long_format
+      end
+    end
+
+    def print_porcelain_format
       @changed.each { |path| puts "#{status_for_path(path)} #{path}" }
       @untracked.each { |path| puts "?? #{path}" }
+    end
+
+    def print_long_format
+      print_changes('Changes to be committed', @index_changes, :green)
+      print_changes('Changes not staged for commit', @workspace_changes, :red)
+      print_changes('Untracked files', @untracked, :red)
+
+      print_commit_status
+    end
+
+    def print_changes(message, change_hash, color)
+      return if change_hash.empty?
+
+      puts message
+      puts
+      change_hash.each do |path, change|
+        long_status = change ? LONG_STATUS[change].ljust(LABEL_WIDTH, ' ') : ''
+        puts "\t#{fmt(long_status + path, color)}"
+      end
+      puts
+    end
+
+    def print_commit_status
+      return if @index_changes.any?
+
+      if @workspace_changes.any?
+        puts 'no changes added to commit'
+      elsif @untracked.any?
+        puts 'no changes added for commit but untracked files present'
+      else
+        puts 'nothing to commit, working tree clean'
+      end
     end
 
     def load_head_tree
@@ -59,16 +116,8 @@ module Command
     end
 
     def status_for_path(path)
-      changes = @changes[path]
-
-      left = ' '
-      left = 'A' if changes.include?(:index_added)
-      left = 'M' if changes.include?(:index_modified)
-      left = 'D' if changes.include?(:index_deleted)
-
-      right = ' '
-      right = 'D' if changes.include?(:workspace_deleted)
-      right = 'M' if changes.include?(:workspace_modified)
+      left = PORCELAIN_STATUS.fetch(@index_changes[path], ' ')
+      right = PORCELAIN_STATUS.fetch(@workspace_changes[path], ' ')
 
       left + right
     end
@@ -97,17 +146,17 @@ module Command
 
       if commited_entry
         unless commited_entry.oid == entry.oid && commited_entry.mode == entry.mode
-          record_change(entry.path, :index_modified)
+          record_change(entry.path, @index_changes, :modified)
         end
       else
-        record_change(entry.path, :index_added)
+        record_change(entry.path, @index_changes, :added)
       end
     end
 
     def check_entry_against_workspace(entry)
       stat = @stats[entry.path]
-      return record_change(entry.path, :workspace_deleted) unless stat
-      return record_change(entry.path, :workspace_modified) unless entry.stat_match?(stat)
+      return record_change(entry.path, @workspace_changes, :deleted) unless stat
+      return record_change(entry.path, @workspace_changes, :modified) unless entry.stat_match?(stat)
       return if entry.times_match?(stat)
 
       check_database_for_object(entry, stat)
@@ -121,13 +170,13 @@ module Command
       if oid == entry.oid
         repo.index.update_entry_stat(entry, stat)
       else
-        record_change(entry.path, :workspace_modified)
+        record_change(entry.path, @workspace_changes, :modified)
       end
     end
 
-    def record_change(path, type)
+    def record_change(path, target_hash, type)
       @changed.add(path)
-      (@changes[path] ||= Set.new).add(type)
+      target_hash[path] = type
     end
 
     def trackable_file?(path, stat)

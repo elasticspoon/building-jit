@@ -145,7 +145,7 @@ class WorkspaceChangesTest < MiniTest::Test
   end
 
   def test_shows_file_changed_with_same_size
-    sleep 0.0001
+    sleep 0.01
     # added the sleep because in certain situations the file
     # the file would be created and modded in the same time according to stat
     write_file('1.txt', '2')
@@ -259,6 +259,29 @@ class IndexHeadChangesTest < MiniTest::Test
   def test_reports_deleted_directories
     delete('a')
     delete('.git/index')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      D  a/2.txt
+      D  a/b/3.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+
+  def test_reports_deleted_files_from_index
+    delete('1.txt')
+    jit_cmd('add', '.')
+
+    assert_repo_status(<<~STATUS
+      D  1.txt
+    STATUS
+                      )
+    assert_status 0
+  end
+
+  def test_reports_deleted_directories_from_index
+    delete('a')
     jit_cmd('add', '.')
 
     assert_repo_status(<<~STATUS

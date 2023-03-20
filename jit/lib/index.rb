@@ -62,6 +62,15 @@ class Index
     file&.close
   end
 
+  def delete_nonexistent_entries(relative_pathname, base_path)
+    qualified_entries = @parents[relative_pathname.to_s] || @entries.keys
+
+    qualified_entries.each do |entry_path|
+      full_path = base_path.join(entry_path)
+      remove_missing_entry(entry_path, full_path)
+    end
+  end
+
   def each_entry
     if block_given?
       @keys.each { |key| yield @entries[key] }
@@ -75,7 +84,11 @@ class Index
   end
 
   def tracked?(path)
-    tracked_file?(path) || @parents.key?(path.to_s)
+    tracked_file?(path) || tracked_dir?(path)
+  end
+
+  def tracked_dir?(path_input)
+    @parents.key?(path_input.to_s)
   end
 
   def tracked_file?(path)
@@ -88,6 +101,27 @@ class Index
   end
 
   private
+
+  def remove_missing_entry(path, full_path)
+    remove_entry(path) if tracked_file?(path) && !File.exist?(full_path)
+    remove_children(path) if tracked_dir?(path) && !File.directory?(full_path)
+  end
+
+  def remove_entry(path)
+    entry = @entries[path.to_s]
+    return if entry.nil?
+
+    @keys.delete(entry.key)
+    @entries.delete(entry.key)
+
+    entry.parent_directories.each do |dirname|
+      dir = dirname.to_s
+      @parents[dir].delete(entry.path)
+      @parents.delete(dir) if @parents[dir].empty?
+    end
+
+    @changed = true
+  end
 
   def add_parents(entry)
     entry.parent_directories.each do |parent|
@@ -103,20 +137,6 @@ class Index
   def remove_children(parent_path)
     children_set = @parents.clone[parent_path]
     children_set&.each { |child| remove_entry(child) }
-  end
-
-  def remove_entry(path)
-    entry = @entries[path.to_s]
-    return if entry.nil?
-
-    @keys.delete(entry.key)
-    @entries.delete(entry.key)
-
-    entry.parent_directories.each do |dirname|
-      dir = dirname.to_s
-      @parents[dir].delete(entry.path)
-      @parents.delete(dir) if @parents[dir].empty?
-    end
   end
 
   def clear
