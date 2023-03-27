@@ -37,6 +37,10 @@ class Database
     @objects[oid] ||= read_object(oid)
   end
 
+  def short_oid(oid)
+    oid.slice(0, 7)
+  end
+
   private
 
   def serialize_object(object)

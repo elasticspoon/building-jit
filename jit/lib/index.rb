@@ -73,10 +73,14 @@ class Index
 
   def each_entry
     if block_given?
-      @keys.each { |key| yield @entries[key] }
+      @keys.each { |key| yield entry_for_path(key) }
     else
       enum_for(:each_entry)
     end
+  end
+
+  def entry_for_path(path)
+    @entries[path.to_s]
   end
 
   def release_lock
@@ -108,7 +112,7 @@ class Index
   end
 
   def remove_entry(path)
-    entry = @entries[path.to_s]
+    entry = entry_for_path(path)
     return if entry.nil?
 
     @keys.delete(entry.key)

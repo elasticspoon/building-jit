@@ -2,6 +2,7 @@ require_relative './database'
 require_relative './index'
 require_relative './refs'
 require_relative './workspace'
+require_relative './repository/status'
 
 class Repository
   def initialize(git_path)
@@ -28,5 +29,10 @@ class Repository
     workspace.list_files.filter_map do |path|
       index.top_untracked(path)
     end.sort
+  end
+
+  def status
+    Status.new(self)
+    # @status ||= Status.new
   end
 end

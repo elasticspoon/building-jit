@@ -1,6 +1,7 @@
 require 'pathname'
 require_relative '../repository'
 require_relative '../color'
+require_relative '../pager'
 
 module Command
   class Base
@@ -13,6 +14,7 @@ module Command
       @stdin = stdin
       @stdout = stdout
       @stderr = stderr
+      @isatty = @stdout.isatty
     end
 
     def expanded_pathname(path)
@@ -22,6 +24,8 @@ module Command
     def puts(string='')
       $stdout.puts string if @env['DEBUG']
       @stdout.puts(string)
+    rescue Errno::EPIPE
+      exit 0
     end
 
     def warn(string='')
@@ -35,6 +39,11 @@ module Command
 
     def execute
       catch(:exit) { run }
+
+      return unless defined? @pager
+
+      @stdout.close_write
+      @pager.wait
     end
 
     def repo
@@ -42,11 +51,19 @@ module Command
     end
 
     def fmt(string, style)
-      @stdout.isatty ? Color.format(string, style) : string
+      @isatty ? Color.format(string, style) : string
     end
 
     def workspace_path
       repo.workspace.pathname
+    end
+
+    def setup_pager
+      return if defined? @pager
+      return unless @isatty
+
+      @pager = Pager.new(@env, @stdout, @stderr)
+      @stdout = @pager.input
     end
   end
 end

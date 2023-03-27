@@ -6,23 +6,24 @@ module Diff
     end
 
     def initialize(a, b)
-      @string_a = a
-      @string_b = b
+      @lines_a = a
+      @lines_b = b
     end
 
     def diff
       diff = []
 
       backtrack do |prev_x, prev_y, x, y|
-        a_line = @string_a[prev_x]
-        b_line = @string_b[prev_y]
+        a_line = @lines_a[prev_x]
+        b_line = @lines_b[prev_y]
 
         if x == prev_x
-          diff.push(Edit.new(:ins, b_line))
+          diff.push(Edit.new(:ins, nil, b_line))
         elsif y == prev_y
-          diff.push(Edit.new(:del, a_line))
+          diff.push(Edit.new(:del, a_line, b_line))
+        # elsif diff[..-3].none? { |v| v.type == :eql }
         else
-          diff.push(Edit.new(:eql, a_line))
+          diff.push(Edit.new(:eql, a_line, b_line))
         end
       end
 
@@ -30,8 +31,8 @@ module Diff
     end
 
     def shortest_edit
-      n = @string_a.size
-      m = @string_b.size
+      n = @lines_a.size
+      m = @lines_b.size
 
       max_edits = n + m
 
@@ -54,8 +55,8 @@ module Diff
     end
 
     def backtrack
-      current_x = @string_a.size
-      current_y = @string_b.size
+      current_x = @lines_a.size
+      current_y = @lines_b.size
 
       trace_table_end_to_start = shortest_edit.each_with_index.reverse_each
 
@@ -118,7 +119,7 @@ module Diff
       y = x - k
 
       while x < n && y < m &&
-            @string_a[x] == @string_b[y]
+            @lines_a[x].text == @lines_b[y].text
         x += 1
         y += 1
       end

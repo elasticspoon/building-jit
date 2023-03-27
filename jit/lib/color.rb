@@ -1,7 +1,9 @@
 class Color
   SGR_COLORS = {
+    bold: 1,
     red: 31,
-    green: 32
+    green: 32,
+    cyan: 36
   }.freeze
 
   def self.format(string, style)
