@@ -82,19 +82,6 @@ Naming/VariableNumber:
 Performance/Casecmp:
   Enabled: false
 
-Rails/ApplicationRecord:
-  Exclude:
-    - "db/migrate/**"
-
-Rails/RakeEnvironment:
-  Enabled: false
-
-Rails/RefuteMethods:
-  Enabled: false
-
-Rails/Validation:
-  Enabled: false
-
 Style/BarePercentLiterals:
   EnforcedStyle: percent_q
 
