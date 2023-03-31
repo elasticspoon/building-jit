@@ -1,5 +1,6 @@
 require 'pathname'
 require_relative '../repository'
+require_relative '../revision'
 require_relative '../color'
 require_relative '../pager'
 

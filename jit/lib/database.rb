@@ -41,6 +41,26 @@ class Database
     oid.slice(0, 7)
   end
 
+  def prefix_match(name)
+    return [] unless name.length > 2
+
+    dir_path = object_path(name).dirname
+
+    Dir.entries(dir_path).filter_map do |oid|
+      full_oid = "#{dir_path.basename}#{oid}"
+      full_oid if full_oid.start_with?(name)
+    end
+  rescue Errno::ENOENT
+    []
+  end
+
+  def type_match_prefixes(candidates, type)
+    candidates.filter do |oid|
+      object = load(oid)
+      object.type == type
+    end
+  end
+
   private
 
   def serialize_object(object)

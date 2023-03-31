@@ -1,6 +1,6 @@
 class Database
   class Commit
-    attr_accessor :oid, :tree
+    attr_accessor :oid, :tree, :parent, :author
 
     def initialize(parent, tree, author, message)
       @parent = parent
@@ -37,7 +37,16 @@ class Database
         headers[header] = value
       end
 
-      Commit.new(headers['parent'], headers['tree'], headers['author'], scanner.rest)
+      Commit.new(
+        headers['parent'],
+        headers['tree'],
+        Author.parse(headers['author']),
+        scanner.rest
+      )
+    end
+
+    def title_line
+      @message.lines.first
     end
   end
 end
