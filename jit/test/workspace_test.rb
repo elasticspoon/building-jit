@@ -1,8 +1,8 @@
-require 'minitest/autorun'
+require "minitest/autorun"
 
-require 'pathname'
-require 'fileutils'
-require 'workspace'
+require "pathname"
+require "fileutils"
+require "workspace"
 
 class WorkspaceTest < MiniTest::Test
   # def test_throws_error_no_file

@@ -1,14 +1,14 @@
-require 'fileutils'
-require 'pathname'
+require "fileutils"
+require "pathname"
 
-require 'command'
-require 'repository'
+require "command"
+require "repository"
 
 module CommandHelper
   def self.included(suite)
     suite.class_eval do
       def setup
-        jit_cmd('init', repo_path.to_s)
+        jit_cmd("init", repo_path.to_s)
       end
 
       def teardown
@@ -36,10 +36,10 @@ module CommandHelper
   end
 
   def commit(message)
-    set_env('GIT_AUTHOR_NAME', 'A. U. Thor')
-    set_env('GIT_AUTHOR_EMAIL', 'author@example.com')
+    set_env("GIT_AUTHOR_NAME", "A. U. Thor")
+    set_env("GIT_AUTHOR_EMAIL", "author@example.com")
     set_stdin(message)
-    jit_cmd('commit')
+    jit_cmd("commit")
   end
 
   def jit_cmd(*argv)
@@ -52,11 +52,11 @@ module CommandHelper
   end
 
   def repo_path
-    Pathname.new(File.expand_path('test_repo', __dir__))
+    Pathname.new(File.expand_path("test_repo", __dir__))
   end
 
   def repo
-    @repo ||= Repository.new(repo_path.join('.git'))
+    @repo ||= Repository.new(repo_path.join(".git"))
   end
 
   def assert_index(expected)
@@ -99,7 +99,7 @@ module CommandHelper
   end
 
   def assert_repo_status(expected)
-    jit_cmd('status', '--porcelain')
+    jit_cmd("status", "--porcelain")
     assert_stdout(expected)
   end
 

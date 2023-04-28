@@ -1,12 +1,12 @@
 # rubocop:disable Naming/MethodParameterName
-require_relative './base'
-require_relative '../diff'
-require_relative '../index/entry'
+require_relative "./base"
+require_relative "../diff"
+require_relative "../index/entry"
 
 module Command
   class Diff < Base
-    NULL_PATH = Pathname.new('/dev/null').freeze
-    NULL_OID = '0' * 40
+    NULL_PATH = Pathname.new("/dev/null").freeze
+    NULL_OID = "0" * 40
 
     Target = Struct.new(:path, :oid, :mode, :data) do
       def diff_path
@@ -20,7 +20,7 @@ module Command
 
       setup_pager
 
-      if @args.first == '--cached'
+      if @args.first == "--cached"
         diff_head_index
       else
         diff_index_workspace
@@ -66,8 +66,8 @@ module Command
     def print_diff(a, b)
       return if a.oid == b.oid && a.mode == b.mode
 
-      a_path = Pathname.new('a').join(a.path)
-      b_path = Pathname.new('b').join(b.path)
+      a_path = Pathname.new("a").join(a.path)
+      b_path = Pathname.new("b").join(b.path)
 
       puts "diff --git #{a_path} #{b_path}"
 
@@ -131,7 +131,7 @@ module Command
     end
 
     def target_from_nothing(path)
-      Target.new(path, NULL_OID, nil, '')
+      Target.new(path, NULL_OID, nil, "")
     end
 
     def target_from_head(path)

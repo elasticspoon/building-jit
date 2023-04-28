@@ -3,6 +3,8 @@ require_relative './index'
 require_relative './refs'
 require_relative './workspace'
 require_relative './repository/status'
+require_relative './repository/migration'
+require_relative './repository/inspector'
 
 class Repository
   def initialize(git_path)
@@ -34,5 +36,9 @@ class Repository
   def status
     Status.new(self)
     # @status ||= Status.new
+  end
+
+  def migration(tree_diff)
+    Migration.new(self, tree_diff)
   end
 end

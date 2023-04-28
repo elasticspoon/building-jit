@@ -1,18 +1,18 @@
-require_relative './base'
-require_relative '../sorted_hash'
+require_relative "./base"
+require_relative "../sorted_hash"
 
 module Command
   class Status < Base
     PORCELAIN_STATUS = {
-      added: 'A',
-      deleted: 'D',
-      modified: 'M'
+      added: "A",
+      deleted: "D",
+      modified: "M"
     }.freeze
 
     LONG_STATUS = {
-      added: 'new file:',
-      deleted: 'deleted:',
-      modified: 'modified:'
+      added: "new file:",
+      deleted: "deleted:",
+      modified: "modified:"
     }.freeze
 
     LABEL_WIDTH = 12
@@ -29,7 +29,7 @@ module Command
     private
 
     def print_results
-      if @args.first == '--porcelain'
+      if @args.first == "--porcelain"
         print_porcelain_format
       else
         print_long_format
@@ -42,9 +42,9 @@ module Command
     end
 
     def print_long_format
-      print_changes('Changes to be committed', @status.index_changes, :green)
-      print_changes('Changes not staged for commit', @status.workspace_changes, :red)
-      print_changes('Untracked files', @status.untracked, :red)
+      print_changes("Changes to be committed", @status.index_changes, :green)
+      print_changes("Changes not staged for commit", @status.workspace_changes, :red)
+      print_changes("Untracked files", @status.untracked, :red)
 
       print_commit_status
     end
@@ -55,7 +55,7 @@ module Command
       puts message
       puts
       change_hash.each do |path, change|
-        long_status = change ? LONG_STATUS[change].ljust(LABEL_WIDTH, ' ') : ''
+        long_status = change ? LONG_STATUS[change].ljust(LABEL_WIDTH, " ") : ""
         puts "\t#{fmt(long_status + path, color)}"
       end
       puts
@@ -65,17 +65,17 @@ module Command
       return if @status.index_changes.any?
 
       if @status.workspace_changes.any?
-        puts 'no changes added to commit'
+        puts "no changes added to commit"
       elsif @status.untracked.any?
-        puts 'no changes added for commit but untracked files present'
+        puts "no changes added for commit but untracked files present"
       else
-        puts 'nothing to commit, working tree clean'
+        puts "nothing to commit, working tree clean"
       end
     end
 
     def status_for_path(path)
-      left = PORCELAIN_STATUS.fetch(@status.index_changes[path], ' ')
-      right = PORCELAIN_STATUS.fetch(@status.workspace_changes[path], ' ')
+      left = PORCELAIN_STATUS.fetch(@status.index_changes[path], " ")
+      right = PORCELAIN_STATUS.fetch(@status.workspace_changes[path], " ")
 
       left + right
     end

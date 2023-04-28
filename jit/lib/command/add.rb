@@ -1,4 +1,4 @@
-require_relative './base'
+require_relative "./base"
 
 module Command
   class Add < Base
@@ -43,7 +43,7 @@ module Command
 
     def handle_no_permission(error)
       warn "error: #{error.message}"
-      warn 'fatal: adding files failed'
+      warn "fatal: adding files failed"
       repo.index.release_lock
       exit 128
     end
@@ -59,7 +59,7 @@ module Command
 
     def expanded_arg_paths
       @args.map do |path_input|
-        target_path = Pathname.new(path_input.chomp('/'))
+        target_path = Pathname.new(path_input.chomp("/"))
         full_path = expanded_pathname(path_input)
 
         [target_path, full_path]

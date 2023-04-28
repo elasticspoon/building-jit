@@ -1,9 +1,9 @@
 class Entry
   attr_reader :name, :oid
 
-  REGULAR_MODE = '100644'.freeze
-  EXECUTABLE_MODE = '100755'.freeze
-  DIRECTORY_MODE = '40000'.freeze
+  REGULAR_MODE = "100644".freeze
+  EXECUTABLE_MODE = "100755".freeze
+  DIRECTORY_MODE = "40000".freeze
 
   def initialize(name, oid, stat)
     @name = name

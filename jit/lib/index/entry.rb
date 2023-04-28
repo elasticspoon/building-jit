@@ -2,7 +2,7 @@ class Index
   REGULAR_MODE = 0o100644
   EXECUTABLE_MODE = 0o100755
   MAX_PATH_SIZE = 0xfff
-  ENTRY_FORMAT = 'N10H40nZ*'.freeze
+  ENTRY_FORMAT = "N10H40nZ*".freeze
   ENTRY_BLOCK = 8
 
   entry_fields = %i[ctime ctime_nsec mtime mtime_nsec dev ino mode uid gid size oid flags path]

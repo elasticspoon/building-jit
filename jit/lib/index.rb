@@ -13,6 +13,8 @@ class Index
 
   ENTRY_SIZE = 64
 
+  Invalid = Class.new(StandardError)
+
   def initialize(pathname)
     @pathname = pathname
     @entries = {}
@@ -25,6 +27,12 @@ class Index
     entry = Entry.create(pathname, oid, stat)
     discard_conflicts(entry)
     store_entry(entry)
+    @changed = true
+  end
+
+  def remove(pathname)
+    remove_entry(pathname)
+    remove_children(pathname.to_s)
     @changed = true
   end
 

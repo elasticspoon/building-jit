@@ -1,16 +1,16 @@
 class Database
   class Tree
-    ENTRY_FORMAT = 'Z*H40'.freeze
+    ENTRY_FORMAT = "Z*H40".freeze
     TREE_MODE = 0o40000
 
     attr_accessor :oid, :entries
 
-    def initialize(entries={})
+    def initialize(entries = {})
       @entries = entries
     end
 
     def type
-      'tree'
+      "tree"
     end
 
     def mode
@@ -61,7 +61,7 @@ class Database
         mode = scanner.scan_until(/ /).strip.to_i(8)
         name = scanner.scan_until(/\0/)[..-2]
 
-        oid = scanner.peek(20).unpack1('H40')
+        oid = scanner.peek(20).unpack1("H40")
         scanner.pos += 20
 
         entries[name] = Entry.new(oid, mode)

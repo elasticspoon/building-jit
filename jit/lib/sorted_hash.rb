@@ -1,5 +1,5 @@
-require 'set'
-require 'sorted_set'
+require "set"
+require "sorted_set"
 
 class SortedHash < Hash
   def initialize

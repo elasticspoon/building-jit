@@ -1,11 +1,11 @@
-require_relative './diff/myers'
-require_relative './diff/hunk'
+require_relative "./diff/myers"
+require_relative "./diff/hunk"
 
 module Diff
   SYMBOLS = {
-    eql: ' ',
-    ins: '+',
-    del: '-'
+    eql: " ",
+    ins: "+",
+    del: "-"
   }.freeze
 
   Edit = Struct.new(:type, :a_line, :b_line) do

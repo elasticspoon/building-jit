@@ -1,12 +1,12 @@
-require 'pathname'
-require_relative './lib/repository'
+require "pathname"
+require_relative "./lib/repository"
 
-repo = Repository.new(Pathname.new(Dir.getwd).join('.git'))
+repo = Repository.new(Pathname.new(Dir.getwd).join(".git"))
 
 head_oid = repo.refs.read_head
 commit = repo.database.load(head_oid)
 
-def show_tree(repo, oid, prefix=Pathname.new(''))
+def show_tree(repo, oid, prefix = Pathname.new(""))
   tree = repo.database.load(oid)
 
   # puts tree.inspect

@@ -1,4 +1,4 @@
-require_relative './base'
+require_relative "./base"
 
 module Command
   class Init < Base
@@ -6,7 +6,7 @@ module Command
       path = @args.fetch(0, @dir)
 
       root_path = expanded_pathname(path)
-      git_path = root_path.join('.git')
+      git_path = root_path.join(".git")
 
       %w[objects refs].each do |dir|
         FileUtils.mkdir_p(git_path.join(dir))

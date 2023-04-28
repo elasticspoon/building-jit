@@ -42,8 +42,8 @@ module Diff
     end
 
     def header
-      a_offset = offsets_for(:a_line, a_start).join(',')
-      b_offset = offsets_for(:b_line, b_start).join(',')
+      a_offset = offsets_for(:a_line, a_start).join(",")
+      b_offset = offsets_for(:b_line, b_start).join(",")
 
       "@@ -#{a_offset} +#{b_offset}"
     end

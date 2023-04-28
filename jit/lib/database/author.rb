@@ -1,7 +1,7 @@
-require 'time'
+require "time"
 
 class Database
-  TIME_FORMAT = '%s %z'.freeze
+  TIME_FORMAT = "%s %z".freeze
 
   Author = Struct.new(:name, :email, :time) do
     def to_s
@@ -17,7 +17,7 @@ class Database
     end
 
     def short_date
-      time.strftime('%Y-%m-%d')
+      time.strftime("%Y-%m-%d")
     end
   end
 end

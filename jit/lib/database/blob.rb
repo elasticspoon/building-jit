@@ -7,7 +7,7 @@ class Database
     end
 
     def type
-      'blob'
+      "blob"
     end
 
     def to_s

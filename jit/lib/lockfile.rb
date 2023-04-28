@@ -6,7 +6,7 @@ class Lockfile
 
   def initialize(path)
     @file_path = path
-    @lock_path = path.sub_ext('.lock')
+    @lock_path = path.sub_ext(".lock")
 
     @lock = nil
   end

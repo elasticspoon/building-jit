@@ -1,4 +1,4 @@
-require_relative './base'
+require_relative "./base"
 
 module Command
   class Branch < Base
@@ -23,7 +23,7 @@ module Command
 
       repo.refs.create_branch(branch_name, oid)
     rescue Refs::InvalidBranch, Revision::InvalidObject => e
-      revision.errors.each do |err|
+      revision&.errors&.each do |err|
         warn "error: #{err.message}"
         err.hint.each { |line| warn "hint: #{line}" }
       end

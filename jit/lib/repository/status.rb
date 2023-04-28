@@ -3,6 +3,7 @@ class Repository
     attr_reader :changed, :workspace_changes, :index_changes, :untracked, :stats, :head_tree
 
     def initialize(repository)
+      @inspector = Inspector.new(repository)
       @repo = repository
       @stats = {}
 
@@ -37,7 +38,7 @@ class Repository
       read_tree(head_commit.tree)
     end
 
-    def read_tree(tree_oid, pathname=Pathname.new(''))
+    def read_tree(tree_oid, pathname = Pathname.new(""))
       tree = repo.database.load(tree_oid)
 
       tree.entries.each do |name, entry|
@@ -50,7 +51,7 @@ class Repository
       end
     end
 
-    def scan_workspace(prefix=nil)
+    def scan_workspace(prefix = nil)
       repo.workspace.list_dir(prefix).each do |path, stat|
         if repo.index.tracked?(path)
           @stats[path] = stat if stat.file?
@@ -60,6 +61,26 @@ class Repository
           @untracked << path
         end
       end
+    end
+
+    def check_index_against_workspace(entry)
+      stat = @stats[entry.path]
+      status = @inspector.compare_index_to_workspace(entry, stat)
+
+      if status
+        record_change(entry.path, @workspace_changes, status)
+      else
+        @repo.index.update_entry_stat(entry, stat)
+      end
+    end
+
+    def check_index_against_head_tree(entry)
+      item = @head_tree[entry.path]
+      status = @inspector.compare_tree_to_index(item, entry)
+
+      return unless status
+
+      record_change(entry.path, @index_changes, status)
     end
 
     def check_index_entries

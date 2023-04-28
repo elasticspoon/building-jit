@@ -2,19 +2,19 @@ class Revision
   InvalidObject = Class.new(StandardError)
 
   Ref = Struct.new(:name) do
-    def resolve(context, type=nil)
+    def resolve(context, type = nil)
       context.read_ref(name, type)
     end
   end
 
   Parent = Struct.new(:rev) do
-    def resolve(context, type=nil)
+    def resolve(context, type = nil)
       context.commit_parent(rev.resolve(context, type))
     end
   end
 
   Ancestor = Struct.new(:rev, :n) do
-    def resolve(context, type=nil)
+    def resolve(context, type = nil)
       oid = rev.resolve(context, type)
       n.times { oid = context.commit_parent(oid) }
       oid
@@ -34,12 +34,12 @@ class Revision
 }x
 
   REF_ALIASES = {
-    '@' => 'HEAD'
+    "@" => "HEAD"
   }.freeze
 
   PARENT = /^(.*)\^$/
   ANCESTOR = /^(.*)~(\d+)$/
-  COMMIT = 'commit'.freeze
+  COMMIT = "commit".freeze
 
   attr_reader :errors
 
@@ -50,9 +50,9 @@ class Revision
     @errors = []
   end
 
-  def resolve(type=nil)
+  def resolve(type = nil)
     oid = @query&.resolve(self, type)
-    oid = nil if type && !loaded_typed_object(oid, type)
+    oid = nil if type && !load_typed_object(oid, type)
 
     return oid if oid
 
@@ -79,14 +79,14 @@ class Revision
     !INVALID_NAME.match?(revision)
   end
 
-  def commit_parent(oid, _type=nil)
+  def commit_parent(oid, _type = nil)
     return nil unless oid
 
-    commit = loaded_typed_object(oid, COMMIT)
+    commit = load_typed_object(oid, COMMIT)
     commit&.parent
   end
 
-  def read_ref(name, type=nil)
+  def read_ref(name, type = nil)
     oid = @repo.refs.read_ref(name)
     return oid if oid
 
@@ -119,13 +119,13 @@ class Revision
     end
 
     message = "short SHA1 #{name} is ambiguous"
-    hint = ['The candidates are:'] + objects
+    hint = ["The candidates are:"] + objects
 
     @errors.push(HintedError.new(message, hint))
     nil
   end
 
-  def loaded_typed_object(oid, type)
+  def load_typed_object(oid, type)
     return nil unless oid
 
     object = @repo.database.load(oid)

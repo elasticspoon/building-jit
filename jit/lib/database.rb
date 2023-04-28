@@ -1,20 +1,21 @@
-require 'digest/sha1'
-require 'fileutils'
-require 'zlib'
-require 'strscan'
+require "digest/sha1"
+require "fileutils"
+require "zlib"
+require "strscan"
 
-require_relative './database/blob'
-require_relative './database/commit'
-require_relative './database/tree'
-require_relative './database/author'
-require_relative './database/entry'
+require_relative "./database/blob"
+require_relative "./database/commit"
+require_relative "./database/tree"
+require_relative "./database/author"
+require_relative "./database/entry"
+require_relative "./database/tree_diff"
 
 class Database
-  TEMP_CHARS = ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a
+  TEMP_CHARS = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a
   OBJECT_TYPES = {
-    'commit' => Commit,
-    'tree'   => Tree,
-    'blob'   => Blob
+    "commit" => Commit,
+    "tree" => Tree,
+    "blob" => Blob
   }.freeze
 
   def initialize(pathname)
@@ -59,6 +60,12 @@ class Database
       object = load(oid)
       object.type == type
     end
+  end
+
+  def tree_diff(a, b)
+    diff = TreeDiff.new(self)
+    diff.compare_oids(a, b)
+    diff.changes
   end
 
   private

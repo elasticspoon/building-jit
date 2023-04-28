@@ -98,7 +98,7 @@ module Diff
       return down_move if k == -depth
       return right_move if k == depth
 
-      v[k - 1] < v[k + 1] ? down_move : right_move
+      (v[k - 1] < v[k + 1]) ? down_move : right_move
     end
 
     def next_x_down_or_right(depth, k, v)
@@ -119,7 +119,7 @@ module Diff
       y = x - k
 
       while x < n && y < m &&
-            @lines_a[x].text == @lines_b[y].text
+          @lines_a[x].text == @lines_b[y].text
         x += 1
         y += 1
       end
