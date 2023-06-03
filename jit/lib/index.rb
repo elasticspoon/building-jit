@@ -1,6 +1,6 @@
 require 'digest/sha1'
-require 'sorted_set'
 
+require_relative './sorted_set'
 require_relative '../lib/index/entry'
 require_relative '../lib/index/checksum'
 require_relative '../lib/lockfile'
@@ -19,7 +19,7 @@ class Index
     @pathname = pathname
     @entries = {}
     @parents = {}
-    @keys = SortedSet.new
+    @keys = SetSorted.new
     @lockfile = Lockfile.new(pathname)
   end
 
@@ -154,7 +154,7 @@ class Index
   def clear
     @entries = {}
     @parents = {}
-    @keys = SortedSet.new
+    @keys = SetSorted.new
     @changed = false
   end
 

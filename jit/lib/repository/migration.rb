@@ -35,10 +35,10 @@ class Repository
       @errors = []
 
       @conflicts = {
-        stale_file: SortedSet.new,
-        stale_directory: SortedSet.new,
-        untracked_overwritten: SortedSet.new,
-        untracked_removed: SortedSet.new
+        stale_file: SetSorted.new,
+        stale_directory: SetSorted.new,
+        untracked_overwritten: SetSorted.new,
+        untracked_removed: SetSorted.new
       }
     end
 

@@ -1,8 +1,8 @@
 require "fileutils"
 require "pathname"
 
-require "command"
-require "repository"
+require_relative "../lib/command"
+require_relative "../lib/repository"
 
 module CommandHelper
   def self.included(suite)
@@ -66,6 +66,14 @@ module CommandHelper
     assert_equal(expected, actual)
   end
 
+  def assert_workspace(expected)
+    actual = repo.workspace.list_files.map do |path|
+      stat = Index::Entry.mode_for_stat(repo.workspace.stat_file(path))
+      [stat, path.to_s]
+    end
+    assert_equal(expected, actual)
+  end
+
   def make_executable(name)
     FileUtils.chmod(0o755, repo_path.join(name))
   end
@@ -92,6 +100,16 @@ module CommandHelper
 
   def assert_stdout(expected)
     assert_output(@stdout, expected)
+  end
+
+  def assert_ref(name, value)
+    ref_value = repo.refs.read_ref(name)
+
+    if value
+      assert_equal(ref_value, value)
+    else
+      assert_equal(ref_value.nil?, false)
+    end
   end
 
   def assert_stderr(expected)

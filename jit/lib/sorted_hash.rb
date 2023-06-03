@@ -1,10 +1,9 @@
-require "set"
-require "sorted_set"
+require_relative 'sorted_set'
 
 class SortedHash < Hash
   def initialize
     super
-    @keys = SortedSet.new
+    @keys = SetSorted.new
   end
 
   def []=(key, value)

@@ -7,10 +7,10 @@ class Repository
       @repo = repository
       @stats = {}
 
-      @changed = SortedSet.new
+      @changed = SetSorted.new
       @index_changes = SortedHash.new
       @workspace_changes = SortedHash.new
-      @untracked = SortedSet.new
+      @untracked = SetSorted.new
 
       scan_workspace
       load_head_tree
@@ -38,7 +38,7 @@ class Repository
       read_tree(head_commit.tree)
     end
 
-    def read_tree(tree_oid, pathname = Pathname.new(""))
+    def read_tree(tree_oid, pathname = Pathname.new(''))
       tree = repo.database.load(tree_oid)
 
       tree.entries.each do |name, entry|
