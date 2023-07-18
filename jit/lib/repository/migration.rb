@@ -6,7 +6,7 @@ class Repository
         "Please commit your changes or stash them before you switch branches."
       ],
       stale_directory: [
-        "Updating the following directories would lose untracked files in them",
+        "Updating the following directories would lose untracked files in them:",
         "\n"
       ],
       untracked_overwritten: [
@@ -55,9 +55,9 @@ class Repository
     private
 
     def plan_changes
-      @diff.each do |path, (old_entry, new_entry)|
-        check_for_conflict(path, old_entry, new_entry)
-        record_change(path, old_entry, new_entry)
+      @diff.each do |path, (old_item, new_item)|
+        check_for_conflict(path, old_item, new_item)
+        record_change(path, old_item, new_item)
       end
 
       collect_errors
@@ -76,16 +76,16 @@ class Repository
       raise Conflict unless @errors.empty?
     end
 
-    def check_for_conflict(path, old_entry, new_entry)
+    def check_for_conflict(path, old_item, new_item)
       entry = @repo.index.entry_for_path(path)
 
-      if index_differs_from_trees(entry, old_entry, new_entry)
+      if index_differs_from_trees(entry, old_item, new_item)
         @conflicts[:stale_file].add(path.to_s)
         return nil
       end
 
       stat = @repo.workspace.stat_file(path)
-      type = get_error_type(stat, old_entry, new_entry)
+      type = get_error_type(stat, entry, new_item)
 
       if stat.nil?
         parent = untracked_parent(path)
@@ -99,9 +99,9 @@ class Repository
       end
     end
 
-    def index_differs_from_trees(entry, old_entry, new_entry)
-      @inspector.compare_tree_to_index(old_entry, entry) &&
-        @inspector.compare_tree_to_index(new_entry, entry)
+    def index_differs_from_trees(entry, old_item, new_item)
+      @inspector.compare_tree_to_index(old_item, entry) &&
+        @inspector.compare_tree_to_index(new_item, entry)
     end
 
     def untracked_parent(path)
@@ -119,7 +119,7 @@ class Repository
       if entry
         :stale_file
       elsif stat&.directory?
-        :untracked_directory
+        :stale_directory
       elsif item
         :untracked_overwritten
       else
@@ -127,18 +127,18 @@ class Repository
       end
     end
 
-    def record_change(path, old_entry, new_entry)
-      if new_entry.nil?
+    def record_change(path, old_item, new_item)
+      if new_item.nil?
         @rmdirs.merge(path.dirname.descend)
         action = :destroy
-      elsif old_entry.nil?
+      elsif old_item.nil?
         @mkdirs.merge(path.dirname.descend)
         action = :create
       else
         @mkdirs.merge(path.dirname.descend)
         action = :update
       end
-      @changes[action].push([path, new_entry])
+      @changes[action].push([path, new_item])
     end
 
     def update_workspace

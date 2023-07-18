@@ -1,6 +1,6 @@
-require 'fileutils'
+require "fileutils"
 class Workspace
-  IGNORE = ['.', '..', '.git'].freeze
+  IGNORE = [".", "..", ".git"].freeze
   MissingFile = Class.new(StandardError)
   NoPermission = Class.new(StandardError)
 
@@ -38,7 +38,7 @@ class Workspace
   end
 
   def list_dir(dir_path)
-    path = @pathname.join(dir_path || '')
+    path = @pathname.join(dir_path || "")
     entries = Dir.entries(path) - IGNORE
     stats = {}
 

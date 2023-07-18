@@ -83,16 +83,17 @@ class CheckoutTest < MiniTest::Test
   end
 
   def test_checkout_fails_with_remove_conflict
-    delete("1.txt")
-    commit_all("removed 1")
+    write_file("outer/a.txt", "value")
+    commit_all("inner file staging")
 
-    write_file("a.txt", "some other value")
-    commit_all("intermediary commit")
+    delete("outer/a.txt")
+    delete(".git/index")
+    jit_cmd("add", ".")
+    write_file("outer/a.txt", "conflict")
 
-    write_file("1.txt", "some value")
     jit_cmd("checkout", "@^")
 
-    assert_stderr_overwrite_conflict("1.txt")
+    assert_stderr_remove_conflict("outer/a.txt")
   end
 
   private
