@@ -2,20 +2,20 @@ class Repository
   class Migration
     MESSAGES = {
       stale_file: [
-        'Your local changes to the following files would be overwritten by checkout:',
-        'Please commit your changes or stash them before you switch branches.'
+        "Your local changes to the following files would be overwritten by checkout:",
+        "Please commit your changes or stash them before you switch branches."
       ],
       stale_directory: [
-        'Updating the following directories would lose untracked files in them',
+        "Updating the following directories would lose untracked files in them",
         "\n"
       ],
       untracked_overwritten: [
-        'The following untracked working tree files would be overwritten by checkout:',
-        'Please move or remove them before you switch branches.'
+        "The following untracked working tree files would be overwritten by checkout:",
+        "Please move or remove them before you switch branches."
       ],
       untracked_removed: [
-        'The following untracked working tree files would be removed by checkout:',
-        'Please move or remove them before you switch branches.'
+        "The following untracked working tree files would be removed by checkout:",
+        "Please move or remove them before you switch branches."
       ]
     }.freeze
 
@@ -27,7 +27,7 @@ class Repository
       @repo = repository
       @diff = tree_diff
 
-      @changes = { create: [], update: [], destroy: [] }
+      @changes = {create: [], update: [], destroy: []}
       @mkdirs = Set.new
       @rmdirs = Set.new
 
@@ -67,11 +67,13 @@ class Repository
       @conflicts.each do |type, paths|
         next if paths.empty?
 
-        header, footer = MESSAGES[type]
-        error_paths = paths.map { |p| "\t#{p}" }
+        error_paths = paths.map { |name| "\t#{name}" }
+        header, footer = MESSAGES.fetch(type)
 
         @errors.push([header, *error_paths, footer].join("\n"))
       end
+
+      raise Conflict unless @errors.empty?
     end
 
     def check_for_conflict(path, old_entry, new_entry)
@@ -104,7 +106,7 @@ class Repository
 
     def untracked_parent(path)
       path.dirname.ascend.find do |parent|
-        next if parent.to_s == '.'
+        next if parent.to_s == "."
 
         parent_stat = @repo.workspace.stat_file(parent)
         next unless parent_stat&.file?
@@ -116,10 +118,10 @@ class Repository
     def get_error_type(stat, entry, item)
       if entry
         :stale_file
-      elsif item
-        :untracked_overwritten
       elsif stat&.directory?
         :untracked_directory
+      elsif item
+        :untracked_overwritten
       else
         :untracked_removed
       end

@@ -66,7 +66,7 @@ class Revision
       rev ? Parent.new(rev) : nil
     when ANCESTOR
       rev = Revision.parse(::Regexp.last_match(1))
-      rev ? Ancestor.new(rev, ::Regexp.last_match(2)) : nil
+      rev ? Ancestor.new(rev, ::Regexp.last_match(2).to_i) : nil
     when INVALID_NAME
       nil
     else

@@ -1,4 +1,4 @@
-require_relative './base'
+require_relative "./base"
 module Command
   class Checkout < Base
     def run
@@ -30,10 +30,10 @@ module Command
     def handle_migration_conflict(migration)
       repo.index.release_lock
 
-      migration.errors.each do |_message|
-        warn 'error: #message'
+      migration.errors.each do |message|
+        warn "error: #{message}"
       end
-      warn 'Aborting'
+      warn "Aborting"
       exit 1
     end
 

@@ -3,6 +3,12 @@ require "pathname"
 
 require_relative "../lib/command"
 require_relative "../lib/repository"
+class Database
+  def store_mock_object(object)
+    content = serialize_object(object)
+    write_object(object.oid, content)
+  end
+end
 
 module CommandHelper
   def self.included(suite)
@@ -42,6 +48,11 @@ module CommandHelper
     jit_cmd("commit")
   end
 
+  def commit_all(message)
+    jit_cmd("add", ".")
+    commit(message)
+  end
+
   def jit_cmd(*argv)
     @env ||= {}
     @stdin ||= StringIO.new
@@ -49,6 +60,10 @@ module CommandHelper
     @stderr = StringIO.new
 
     @cmd = Command.execute(repo_path.to_s, @env, argv, @stdin, @stdout, @stderr)
+  end
+
+  def current_head
+    repo.refs.read_head
   end
 
   def repo_path
@@ -72,6 +87,16 @@ module CommandHelper
       [stat, path.to_s]
     end
     assert_equal(expected, actual)
+  end
+
+  def assert_workspace_contents(expected, repo = self.repo)
+    files = {}
+
+    repo.workspace.list_files.sort.each do |pathname|
+      files[pathname.to_s] = repo.workspace.read_file(pathname)
+    end
+
+    assert_equal(expected, files)
   end
 
   def make_executable(name)
@@ -126,5 +151,13 @@ module CommandHelper
   def assert_output(stream, message)
     stream.rewind
     assert_equal(message, stream.read)
+  end
+
+  def assert_file_contents(file, expected)
+    file_name = repo_path.join(file)
+    raise StandardError, "File #{file_name} does not exist" unless File.exist?(file_name)
+
+    file_content = File.read(file_name)
+    assert_equal(expected, file_content)
   end
 end

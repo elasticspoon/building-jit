@@ -7,10 +7,10 @@ class Repository
     def trackable_file?(path, stat)
       return false unless stat
 
-      return !repo.index.tracked?(path) if stat.file?
+      return !@repo.index.tracked?(path) if stat.file?
       return false unless stat.directory? # false if not file or dir.
 
-      items = sort_files_first(repo.workspace.list_dir(path))
+      items = sort_files_first(@repo.workspace.list_dir(path))
 
       items.any? do |i_path, i_stat|
         trackable_file?(i_path, i_stat)
@@ -40,7 +40,7 @@ class Repository
       return :added unless item
       return :deleted unless entry
 
-      return if entry.mode == item.mode && entry.oid == item.oid
+      return nil if entry.mode == item.mode && entry.oid == item.oid
 
       :modified
     end

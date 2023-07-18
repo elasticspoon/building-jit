@@ -1,4 +1,4 @@
-require_relative '../lib/lockfile'
+require_relative "../lib/lockfile"
 
 class Refs
   LockDenied = Class.new(StandardError)
@@ -13,12 +13,12 @@ class Refs
 | @\{
 | [\x00-\x20*:?\[\\^~\x7f]
 }x
-  HEAD = 'HEAD'.freeze
+  HEAD = "HEAD".freeze
 
   def initialize(pathname)
     @pathname = pathname
-    @refs_path = pathname.join('refs')
-    @heads_path = @refs_path.join('heads')
+    @refs_path = pathname.join("refs")
+    @heads_path = @refs_path.join("heads")
   end
 
   def update_head(oid)
@@ -76,6 +76,6 @@ class Refs
   end
 
   def branch_path(branch_name)
-    @pathname.join('refs/heads').join(branch_name)
+    @pathname.join("refs/heads").join(branch_name)
   end
 end
