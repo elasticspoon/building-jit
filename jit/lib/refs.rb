@@ -4,6 +4,24 @@ class Refs
   LockDenied = Class.new(StandardError)
   InvalidBranch = Class.new(StandardError)
 
+  SymRef = Struct.new(:refs, :path) do
+    def read_oid
+      refs.read_ref(path)
+    end
+
+    def head?
+      path == HEAD
+    end
+  end
+
+  Ref = Struct.new(:oid) do
+    def read_oid
+      oid
+    end
+  end
+
+  SYMREF = /^ref: (.+)$/
+
   INVALID_NAME = %r{
 ^\.
 | /\.
@@ -22,11 +40,23 @@ class Refs
   end
 
   def update_head(oid)
-    update_ref_file(head_path, oid)
+    update_symref(head_path, oid)
   end
 
   def read_head
-    File.read(head_path).strip if File.exist?(head_path)
+    read_symref(head_path)
+  end
+
+  def set_head(revision, oid)
+    head = @pathname.join(HEAD)
+    path = @heads_path.join(revision)
+
+    if File.file?(path)
+      relative = path.relative_path_from(@pathname)
+      update_ref_file(head, "ref: #{relative}")
+    else
+      update_ref_file(head, oid)
+    end
   end
 
   def create_branch(branch_name, start_oid)
@@ -40,11 +70,57 @@ class Refs
 
   def read_ref(name)
     path = path_for_name(name)
-    # read_ref_file(path)
-    File.read(path).rstrip unless path.nil?
+    path.nil? ? nil : read_symref(path)
+  end
+
+  def current_ref(source = HEAD)
+    ref = read_oid_or_symref(@pathname.join(source))
+
+    case ref
+    when SymRef
+      current_ref(ref.path)
+    when Ref, nil
+      SymRef.new(self, source)
+    end
   end
 
   private
+
+  def read_oid_or_symref(path)
+    data = File.read(path).strip
+    match = SYMREF.match(data)
+
+    match ? SymRef.new(self, match[1]) : Ref.new(data)
+  rescue Errno::ENOENT
+    nil
+  end
+
+  def read_symref(path)
+    ref = read_oid_or_symref(path)
+
+    case ref
+    when SymRef
+      symref_path = @pathname.join(ref.path)
+      read_symref(symref_path)
+    when Ref
+      ref.oid
+    end
+  end
+
+  def update_symref(path, oid)
+    lockfile = Lockfile.new(path)
+    lockfile.hold_for_update
+
+    ref = read_oid_or_symref(path)
+
+    return write_lockfile(lockfile, oid) unless ref.is_a?(SymRef)
+
+    begin
+      update_symref(@pathname.join(ref.path), oid)
+    ensure
+      lockfile.rollback
+    end
+  end
 
   def path_for_name(name)
     prefixes = [@pathname, @refs_path, @heads_path]
@@ -63,12 +139,16 @@ class Refs
     lockfile = Lockfile.new(path)
 
     lockfile.hold_for_update
-    lockfile.write(oid)
-    lockfile.write("\n")
-    lockfile.commit
+    write_lockfile(lockfile, oid)
   rescue Lockfile::MissingParent
     FileUtils.mkdir_p(path.dirname)
     retry
+  end
+
+  def write_lockfile(lockfile, oid)
+    lockfile.write(oid)
+    lockfile.write("\n")
+    lockfile.commit
   end
 
   def head_path

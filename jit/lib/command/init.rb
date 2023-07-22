@@ -2,6 +2,8 @@ require_relative "./base"
 
 module Command
   class Init < Base
+    DEFAULT_BRANCH = "main".freeze
+
     def run
       path = @args.fetch(0, @dir)
 
@@ -14,6 +16,10 @@ module Command
         warn "fatal #{e.message}"
         exit 1
       end
+
+      # refs = Refs.new(git_path)
+      # path = File.join("refs", "heads", DEFAULT_BRANCH)
+      # refs.update_head("ref: #{path}")
 
       puts "Initialized empty JIT repository in #{git_path}"
       exit 0

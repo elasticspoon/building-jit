@@ -83,5 +83,16 @@ class BranchTest < MiniTest::Test
     assert_ref("main", original_head)
   end
 
-  # TODO: Figure out how to make objects with specific shas
+  def test_head_moves_with_branch_pointer
+    write_file("a.txt", "initial")
+    commit_all("initial")
+
+    jit_cmd("branch", "initial_head", "@")
+    jit_cmd("checkout", "initial_head")
+
+    write_file("b.txt", "initial")
+    commit_all("second")
+
+    assert_ref("initial_head", current_head)
+  end
 end
