@@ -99,5 +99,8 @@ module Command
     def checkout_detaches_head?
       !@current_ref.head? && @new_ref.head?
     end
+
+    def define_options
+    end
   end
 end

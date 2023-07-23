@@ -24,5 +24,10 @@ module Command
       puts "Initialized empty JIT repository in #{git_path}"
       exit 0
     end
+
+    private
+
+    def define_options
+    end
   end
 end

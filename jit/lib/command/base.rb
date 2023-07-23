@@ -1,4 +1,5 @@
 require "pathname"
+require "optparse"
 require_relative "../repository"
 require_relative "../revision"
 require_relative "../color"
@@ -39,6 +40,7 @@ module Command
     end
 
     def execute
+      parse_options
       catch(:exit) { run }
 
       return unless defined? @pager
@@ -65,6 +67,18 @@ module Command
 
       @pager = Pager.new(@env, @stdout, @stderr)
       @stdout = @pager.input
+    end
+
+    def parse_options
+      @options = {}
+      @parser = OptionParser.new
+
+      define_options
+      @parser.parse!(@args)
+    end
+
+    def define_options
+      $stdout.puts "#{self.class} should redefine the 'define_options' method from the Command::Base class"
     end
   end
 end

@@ -12,6 +12,10 @@ class Refs
     def head?
       path == HEAD
     end
+
+    def short_name
+      refs.short_name(path)
+    end
   end
 
   Ref = Struct.new(:oid) do
@@ -82,6 +86,53 @@ class Refs
     when Ref, nil
       SymRef.new(self, source)
     end
+  end
+
+  def list_branches
+    list_refs(@heads_path)
+  end
+
+  def list_refs(dirname)
+    invalid_dirs = [".", ".."]
+    names = Dir.entries(dirname) - invalid_dirs
+
+    names.map { |name| dirname.join(name) }.flat_map do |path|
+      if File.directory?(path)
+        list_refs(path)
+      else
+        path = path.relative_path_from(@pathname)
+        SymRef.new(self, path.to_s)
+      end
+    end
+  rescue Errno::ENOENT
+    []
+  end
+
+  def short_name(path)
+    path = @pathname.join(path)
+
+    prefix = [@heads_path, @pathname].find do |dir|
+      path.dirname.ascend.any? { |parent| parent == dir }
+    end
+
+    path.relative_path_from(prefix).to_s
+  end
+
+  def delete_branch(branch_name)
+    path = @heads_path.join(branch_name)
+
+    lockfile = Lockfile.new(path)
+    lockfile.hold_for_update
+
+    oid = read_symref(path)
+    raise InvalidBranch, "branch '#{branch_name}' not found." unless oid
+
+    File.unlink(path)
+    delete_parent_directories(path)
+
+    oid
+  ensure
+    lockfile.rollback
   end
 
   private
@@ -157,5 +208,16 @@ class Refs
 
   def branch_path(branch_name)
     @pathname.join("refs/heads").join(branch_name)
+  end
+
+  def delete_parent_directories(path)
+    path.dirname.ascend do |dir|
+      break if dir == @heads_path
+      begin
+        Dir.rmdir(dir)
+      rescue Errno::ENOTEMPTY
+        break
+      end
+    end
   end
 end

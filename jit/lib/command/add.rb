@@ -80,5 +80,8 @@ module Command
         repo.index.delete_nonexistent_entries(target_path, workspace_path)
       end
     end
+
+    def define_options
+    end
   end
 end

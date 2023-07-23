@@ -127,7 +127,7 @@ module CommandHelper
     assert_output(@stdout, expected)
   end
 
-  def assert_ref(name, value)
+  def assert_ref(name, value = nil)
     ref_value = repo.refs.read_ref(name)
 
     if value
@@ -135,6 +135,12 @@ module CommandHelper
     else
       assert_equal(ref_value.nil?, false)
     end
+  end
+
+  def assert_no_ref(name)
+    ref_value = repo.refs.read_ref(name)
+
+    assert_nil(ref_value)
   end
 
   def assert_stderr(expected)

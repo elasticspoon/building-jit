@@ -20,11 +20,7 @@ module Command
 
       setup_pager
 
-      if @args.first == "--cached"
-        diff_head_index
-      else
-        diff_index_workspace
-      end
+      run_with_options
 
       exit 0
     end
@@ -141,6 +137,20 @@ module Command
       mode = entry.mode.to_s(8)
 
       Target.new(path, oid, mode, blob.data)
+    end
+
+    def run_with_options
+      if @options[:cached]
+        diff_head_index
+      else
+        diff_index_workspace
+      end
+    end
+
+    def define_options
+      @parser.on("--cached", "--staged") do
+        @options[:cached] = true
+      end
     end
   end
 end

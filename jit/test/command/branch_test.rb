@@ -88,4 +88,155 @@ class BranchTest < MiniTest::Test
 
     assert_ref("initial_head", current_head)
   end
+
+  ### Branch Listing ###
+
+  def test_lists_branches_compact
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    jit_cmd("branch", "secondary")
+
+    jit_cmd("branch")
+
+    assert_stdout(<<~MSG
+      * main
+        secondary
+    MSG
+                 )
+  end
+
+  def test_lists_branches_verbose
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    short_sha = current_head[..6]
+
+    jit_cmd("branch", "secondary")
+
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout(<<~MSG
+      * main      #{short_sha} initial
+        secondary #{short_sha} initial
+    MSG
+                 )
+  end
+
+  def test_lists_verbose_branches_short_command
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    short_sha = current_head[..6]
+
+    jit_cmd("branch", "secondary")
+
+    jit_cmd("branch", "-v")
+
+    assert_stdout(<<~MSG
+      * main      #{short_sha} initial
+        secondary #{short_sha} initial
+    MSG
+                 )
+  end
+
+  def test_branch_delete_deletes_branch
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    jit_cmd("branch", "secondary")
+    jit_cmd("branch", "tertiary")
+
+    jit_cmd("branch", "-D", "secondary")
+
+    assert_ref("tertiary")
+    assert_ref("main")
+    assert_no_ref("secondary")
+  end
+
+  def test_branch_delete_reports_error_deleting_missing_branch
+    jit_cmd("branch", "-D", "missing")
+
+    assert_stderr("error: branch 'missing' not found.\n")
+  end
+
+  def test_force_delete_branch
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    jit_cmd("branch", "secondary")
+    jit_cmd("branch", "tertiary")
+
+    short_sha = current_head[..6]
+    jit_cmd("branch", "-D", "secondary")
+
+    assert_stdout(<<~MSG
+      Deleted branch secondary (was #{short_sha}).
+    MSG
+                 )
+  end
+
+  def test_regular_delete_branch_with_force_alt_syntax
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    jit_cmd("branch", "secondary")
+    jit_cmd("branch", "tertiary")
+
+    short_sha = current_head[..6]
+    jit_cmd("branch", "-d", "--force", "secondary")
+
+    assert_stdout(<<~MSG
+      Deleted branch secondary (was #{short_sha}).
+    MSG
+                 )
+  end
+
+  def test_regular_delete_branch_with_force
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    jit_cmd("branch", "secondary")
+    jit_cmd("branch", "tertiary")
+
+    short_sha = current_head[..6]
+    jit_cmd("branch", "-d", "-f", "secondary")
+
+    assert_stdout(<<~MSG
+      Deleted branch secondary (was #{short_sha}).
+    MSG
+                 )
+  end
+
+  def test_force_delete_multiples_branches
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    jit_cmd("branch", "secondary")
+    jit_cmd("branch", "tertiary")
+
+    short_sha = current_head[..6]
+    jit_cmd("branch", "-D", "secondary", "tertiary")
+
+    assert_stdout(<<~MSG
+      Deleted branch secondary (was #{short_sha}).
+      Deleted branch tertiary (was #{short_sha}).
+    MSG
+                 )
+  end
+
+  def test_branch_regular_delete_branch
+    write_file("a.txt", "intial")
+    commit_all("initial")
+
+    jit_cmd("branch", "secondary")
+    jit_cmd("branch", "tertiary")
+
+    jit_cmd("branch", "-d", "secondary")
+
+    assert_stderr("Unforced branch deletion not implemented\n")
+  end
+
+  def test_regular_delete_unmerged_branch_fails
+  end
 end

@@ -25,5 +25,10 @@ module Command
       puts "[#{is_root}#{commit.oid}] #{message.lines.first}"
       exit 0
     end
+
+    private
+
+    def define_options
+    end
   end
 end

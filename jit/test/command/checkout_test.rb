@@ -88,11 +88,11 @@ class CheckoutTest < MiniTest::Test
 
     delete("outer/a.txt")
     delete(".git/index")
-    write_file("outer/a.txt", "conflict")
     jit_cmd("add", ".")
 
-    jit_cmd("checkout", "@^")
+    write_file("outer/a.txt", "conflict")
 
+    jit_cmd("checkout", "@^")
     assert_stderr_remove_conflict("outer/a.txt")
   end
 

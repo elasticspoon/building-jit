@@ -28,11 +28,19 @@ module Command
 
     private
 
+    def define_options
+      @options[:format] = "long"
+      @parser.on("--porcelain") { @options[:format] = "porcelain" }
+    end
+
     def print_results
-      if @args.first == "--porcelain"
+      case @options[:format]
+      when "long"
+        print_long_format
+      when "porcelain"
         print_porcelain_format
       else
-        print_long_format
+        raise StandardError, "Invalid format #{@options[:format]}. Valid formats are: '--porcelain'"
       end
     end
 
