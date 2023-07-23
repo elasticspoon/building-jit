@@ -10,16 +10,16 @@ module Command
       root_path = expanded_pathname(path)
       git_path = root_path.join(".git")
 
-      %w[objects refs].each do |dir|
+      %w[objects refs/heads].each do |dir|
         FileUtils.mkdir_p(git_path.join(dir))
       rescue Errno::EACCES => e
-        warn "fatal #{e.message}"
+        warn "fatal: #{e.message}"
         exit 1
       end
 
-      # refs = Refs.new(git_path)
-      # path = File.join("refs", "heads", DEFAULT_BRANCH)
-      # refs.update_head("ref: #{path}")
+      refs = Refs.new(git_path)
+      path = File.join("refs", "heads", DEFAULT_BRANCH)
+      refs.update_head("ref: #{path}")
 
       puts "Initialized empty JIT repository in #{git_path}"
       exit 0

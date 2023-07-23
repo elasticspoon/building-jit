@@ -96,6 +96,19 @@ class CheckoutTest < MiniTest::Test
     assert_stderr_remove_conflict("outer/a.txt")
   end
 
+  def test_checkout_fails_with_unstaged_file_at_parent_path
+    write_file("outer/inner/94.txt", "94")
+    commit_all("init")
+
+    delete("outer/inner")
+    delete(".git/index")
+    jit_cmd("add", ".")
+    write_file("outer/inner", "conflict")
+
+    jit_cmd("checkout", "@^")
+    assert_stderr_remove_conflict("outer/inner")
+  end
+
   def test_checkout_detached_to_branch_prints_current_HEAD_pos
     write_file("ab.txt", "aaa")
     jit_cmd("branch", "init")

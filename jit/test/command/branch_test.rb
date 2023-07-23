@@ -33,54 +33,47 @@ class BranchTest < MiniTest::Test
   def test_creates_branch_given_specific_commit
     commit("test")
 
-    current_head = repo.refs.read_head
+    jit_cmd("branch", "new_head", current_head)
 
-    jit_cmd("branch", "main", current_head)
-
-    assert_ref("main", current_head)
+    assert_ref("new_head", current_head)
   end
 
   def test_specific_commit_with_reference_using_tilde
     commit("test")
 
-    original_head = repo.refs.read_head
+    original_head = current_head
 
     commit("test")
     commit("test")
 
-    current_head = repo.refs.read_head
+    jit_cmd("branch", "new_head", "@~2")
 
-    jit_cmd("branch", "main", "#{current_head}~2")
-
-    assert_ref("main", original_head)
+    assert_ref("new_head", original_head)
   end
 
   def test_ampersand_matches_head
     commit("test")
 
-    original_head = repo.refs.read_head
+    original_head = current_head
 
     commit("test")
     commit("test")
 
-    jit_cmd("branch", "main", "@^^")
+    jit_cmd("branch", "new_head", "@^^")
 
-    assert_ref("main", original_head)
+    assert_ref("new_head", original_head)
   end
 
   def test_specific_commit_with_reference_using_caret
     commit("test")
 
-    original_head = repo.refs.read_head
+    original_head = current_head
 
     commit("test")
-    commit("test")
 
-    current_head = repo.refs.read_head
+    jit_cmd("branch", "old_head", "@^")
 
-    jit_cmd("branch", "main", "#{current_head}^^")
-
-    assert_ref("main", original_head)
+    assert_ref("old_head", original_head)
   end
 
   def test_head_moves_with_branch_pointer
