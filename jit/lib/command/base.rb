@@ -1,9 +1,9 @@
-require "pathname"
-require "optparse"
-require_relative "../repository"
-require_relative "../revision"
-require_relative "../color"
-require_relative "../pager"
+require 'pathname'
+require 'optparse'
+require_relative '../repository'
+require_relative '../revision'
+require_relative '../color'
+require_relative '../pager'
 
 module Command
   class Base
@@ -23,18 +23,18 @@ module Command
       Pathname.new(File.expand_path(path, @dir))
     end
 
-    def puts(string = "")
-      $stdout.puts string if @env["DEBUG"]
+    def puts(string='')
+      $stdout.puts string if @env['DEBUG']
       @stdout.puts(string)
     rescue Errno::EPIPE
       exit 0
     end
 
-    def warn(string = "")
+    def warn(string='')
       @stderr.puts(string)
     end
 
-    def exit(status = 0)
+    def exit(status=0)
       @status = status
       throw :exit
     end
@@ -50,7 +50,7 @@ module Command
     end
 
     def repo
-      @repo ||= Repository.new(Pathname.new(@dir).join(".git"))
+      @repo ||= Repository.new(Pathname.new(@dir).join('.git'))
     end
 
     def fmt(string, style)

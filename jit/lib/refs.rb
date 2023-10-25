@@ -135,7 +135,22 @@ class Refs
     lockfile.rollback
   end
 
+  def reverse_refs
+    table = Hash.new { |h, k| h[k] = [] }
+
+    list_all_refs.each do |ref|
+      oid = ref.read_oid
+      table[oid] << ref
+    end
+
+    table
+  end
+
   private
+
+  def list_all_refs
+    [SymRef.new(self, HEAD)] + list_refs(@refs_path)
+  end
 
   def read_oid_or_symref(path)
     data = File.read(path).strip

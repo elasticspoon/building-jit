@@ -107,36 +107,37 @@ describe Command::Log do
         #{@commits[2].oid} A
       LOGS
     end
+
     it 'prints a log with short decorations' do
       jit_cmd 'log', '--pretty=oneline', '--decorate=short'
 
       assert_stdout <<~LOGS
-        #{@commits[0].oid} (HEAD -> master) C
+        #{@commits[0].oid} (HEAD -> main) C
         #{@commits[1].oid} B
         #{@commits[2].oid} (topic) A
       LOGS
     end
-    #
-    #   it 'prints a log with detached HEAD' do
-    #     jit_cmd 'checkout', '@'
-    #     jit_cmd 'log', '--pretty=oneline', '--decorate=short'
-    #
-    #     assert_stdout <<~LOGS
-    #       #{@commits[0].oid} (HEAD, master) C
-    #       #{@commits[1].oid} B
-    #       #{@commits[2].oid} (topic) A
-    #     LOGS
-    #   end
-    #
-    #   it 'prints a log with full decorations' do
-    #     jit_cmd 'log', '--pretty=oneline', '--decorate=full'
-    #
-    #     assert_stdout <<~LOGS
-    #       #{@commits[0].oid} (HEAD -> refs/heads/master) C
-    #       #{@commits[1].oid} B
-    #       #{@commits[2].oid} (refs/heads/topic) A
-    #     LOGS
-    #   end
+
+    it 'prints a log with detached HEAD' do
+      jit_cmd 'checkout', '@'
+      jit_cmd 'log', '--pretty=oneline', '--decorate=short'
+
+      assert_stdout <<~LOGS
+        #{@commits[0].oid} (HEAD, main) C
+        #{@commits[1].oid} B
+        #{@commits[2].oid} (topic) A
+      LOGS
+    end
+
+    it 'prints a log with full decorations' do
+      jit_cmd 'log', '--pretty=oneline', '--decorate=full'
+
+      assert_stdout <<~LOGS
+        #{@commits[0].oid} (HEAD -> refs/heads/main) C
+        #{@commits[1].oid} B
+        #{@commits[2].oid} (refs/heads/topic) A
+      LOGS
+    end
     #
     #   it 'prints a log with patches' do
     #     jit_cmd 'log', '--pretty=oneline', '--patch'
@@ -250,40 +251,40 @@ describe Command::Log do
   #
   # describe 'with a tree of commits' do
   #   #  m1  m2  m3
-  #   #   o---o---o [master]
+  #   #   o---o---o [main]
   #   #        \
   #   #         o---o---o---o [topic]
   #   #        t1  t2  t3  t4
   #
   #   before do
-  #     (1..3).each { |n| commit_file "master-#{n}" }
+  #     (1..3).each { |n| commit_file "main-#{n}" }
   #
-  #     jit_cmd 'branch', 'topic', 'master^'
+  #     jit_cmd 'branch', 'topic', 'main^'
   #     jit_cmd 'checkout', 'topic'
   #
   #     @branch_time = Time.now + 10
   #     (1..4).each { |n| commit_file "topic-#{n}", @branch_time }
   #
-  #     @master = (0..2).map { |n| resolve_revision("master~#{n}") }
+  #     @main = (0..2).map { |n| resolve_revision("master~#{n}") }
   #     @topic  = (0..3).map { |n| resolve_revision("topic~#{n}") }
   #   end
   #
   #   it 'logs the combined history of multiple branches' do
-  #     jit_cmd 'log', '--pretty=oneline', '--decorate=short', 'master', 'topic'
+  #     jit_cmd 'log', '--pretty=oneline', '--decorate=short', 'main', 'topic'
   #
   #     assert_stdout <<~LOGS
   #       #{@topic[0]} (HEAD -> topic) topic-4
   #       #{@topic[1]} topic-3
   #       #{@topic[2]} topic-2
   #       #{@topic[3]} topic-1
-  #       #{@master[0]} (master) master-3
-  #       #{@master[1]} master-2
-  #       #{@master[2]} master-1
+  #       #{@main[0]} (master) master-3
+  #       #{@main[1]} master-2
+  #       #{@main[2]} master-1
   #     LOGS
   #   end
   #
   #   it 'logs the difference from one one branch to another' do
-  #     jit_cmd 'log', '--pretty=oneline', 'master..topic'
+  #     jit_cmd 'log', '--pretty=oneline', 'main..topic'
   #
   #     assert_stdout <<~LOGS
   #       #{@topic[0]} topic-4
@@ -292,10 +293,10 @@ describe Command::Log do
   #       #{@topic[3]} topic-1
   #     LOGS
   #
-  #     jit_cmd 'log', '--pretty=oneline', 'master', '^topic'
+  #     jit_cmd 'log', '--pretty=oneline', 'main', '^topic'
   #
   #     assert_stdout <<~LOGS
-  #       #{@master[0]} master-3
+  #       #{@main[0]} master-3
   #     LOGS
   #   end
   #
@@ -305,7 +306,7 @@ describe Command::Log do
   #
   #     (1..10).each { |n| commit_file "side-#{n}", @branch_time }
   #
-  #     jit_cmd 'log', '--pretty=oneline', 'side..topic', '^master'
+  #     jit_cmd 'log', '--pretty=oneline', 'side..topic', '^main'
   #
   #     assert_stdout <<~LOGS
   #       #{@topic[0]} topic-4
@@ -326,7 +327,7 @@ describe Command::Log do
   #
   # describe 'with a graph of commits' do
   #   #   A   B   C   D   J   K
-  #   #   o---o---o---o---o---o [master]
+  #   #   o---o---o---o---o---o [main]
   #   #        \         /
   #   #         o---o---o---o [topic]
   #   #         E   F   G   H
@@ -347,7 +348,7 @@ describe Command::Log do
   #       three
   #     EOF
   #
-  #     jit_cmd 'branch', 'topic', 'master~2'
+  #     jit_cmd 'branch', 'topic', 'main~2'
   #     jit_cmd 'checkout', 'topic'
   #
   #     ('E'..'H').each { |n| commit_tree n, { 'g.txt' => n, 'h.txt' => <<~EOF }, time + 2 }
@@ -356,12 +357,12 @@ describe Command::Log do
   #       #{n}
   #     EOF
   #
-  #     jit_cmd 'checkout', 'master'
+  #     jit_cmd 'checkout', 'main'
   #     jit_cmd 'merge', 'topic^', '-m', 'J'
   #
   #     commit_tree 'K', { 'f.txt' => 'K' }, time + 3
   #
-  #     @master = (0..5).map { |n| resolve_revision("master~#{n}") }
+  #     @main = (0..5).map { |n| resolve_revision("master~#{n}") }
   #     @topic  = (0..3).map { |n| resolve_revision("topic~#{n}") }
   #   end
   #
@@ -369,43 +370,43 @@ describe Command::Log do
   #     jit_cmd 'log', '--pretty=oneline'
   #
   #     assert_stdout <<~LOGS
-  #       #{@master[0]} K
-  #       #{@master[1]} J
+  #       #{@main[0]} K
+  #       #{@main[1]} J
   #       #{@topic[1]} G
   #       #{@topic[2]} F
   #       #{@topic[3]} E
-  #       #{@master[2]} D
-  #       #{@master[3]} C
-  #       #{@master[4]} B
-  #       #{@master[5]} A
+  #       #{@main[2]} D
+  #       #{@main[3]} C
+  #       #{@main[4]} B
+  #       #{@main[5]} A
   #     LOGS
   #   end
   #
   #   it 'logs the first parent of a merge' do
-  #     jit_cmd 'log', '--pretty=oneline', 'master^^'
+  #     jit_cmd 'log', '--pretty=oneline', 'main^^'
   #
   #     assert_stdout <<~LOGS
-  #       #{@master[2]} D
-  #       #{@master[3]} C
-  #       #{@master[4]} B
-  #       #{@master[5]} A
+  #       #{@main[2]} D
+  #       #{@main[3]} C
+  #       #{@main[4]} B
+  #       #{@main[5]} A
   #     LOGS
   #   end
   #
   #   it 'logs the second parent of a merge' do
-  #     jit_cmd 'log', '--pretty=oneline', 'master^^2'
+  #     jit_cmd 'log', '--pretty=oneline', 'main^^2'
   #
   #     assert_stdout <<~LOGS
   #       #{@topic[1]} G
   #       #{@topic[2]} F
   #       #{@topic[3]} E
-  #       #{@master[4]} B
-  #       #{@master[5]} A
+  #       #{@main[4]} B
+  #       #{@main[5]} A
   #     LOGS
   #   end
   #
   #   it 'logs unmerged commits on a branch' do
-  #     jit_cmd 'log', '--pretty=oneline', 'master..topic'
+  #     jit_cmd 'log', '--pretty=oneline', 'main..topic'
   #
   #     assert_stdout <<~LOGS
   #       #{@topic[0]} H
@@ -413,10 +414,10 @@ describe Command::Log do
   #   end
   #
   #   it 'does not show patches for merge commits' do
-  #     jit_cmd 'log', '--pretty=oneline', '--patch', 'topic..master', '^master^^^'
+  #     jit_cmd 'log', '--pretty=oneline', '--patch', 'topic..main', '^master^^^'
   #
   #     assert_stdout <<~LOGS
-  #       #{@master[0]} K
+  #       #{@main[0]} K
   #       diff --git a/f.txt b/f.txt
   #       index 02358d2..449e49e 100644
   #       --- a/f.txt
@@ -424,8 +425,8 @@ describe Command::Log do
   #       @@ -1,1 +1,1 @@
   #       -D
   #       +K
-  #       #{@master[1]} J
-  #       #{@master[2]} D
+  #       #{@main[1]} J
+  #       #{@main[2]} D
   #       diff --git a/f.txt b/f.txt
   #       index 96d80cd..02358d2 100644
   #       --- a/f.txt
@@ -446,10 +447,10 @@ describe Command::Log do
   #   end
   #
   #   it 'shows combined patches for merges' do
-  #     jit_cmd 'log', '--pretty=oneline', '--cc', 'topic..master', '^master^^^'
+  #     jit_cmd 'log', '--pretty=oneline', '--cc', 'topic..main', '^master^^^'
   #
   #     assert_stdout <<~LOGS
-  #       #{@master[0]} K
+  #       #{@main[0]} K
   #       diff --git a/f.txt b/f.txt
   #       index 02358d2..449e49e 100644
   #       --- a/f.txt
@@ -457,7 +458,7 @@ describe Command::Log do
   #       @@ -1,1 +1,1 @@
   #       -D
   #       +K
-  #       #{@master[1]} J
+  #       #{@main[1]} J
   #       diff --cc h.txt
   #       index 4139691,f3e97ee..4e78f4f
   #       --- a/h.txt
@@ -468,7 +469,7 @@ describe Command::Log do
   #         two
   #       - three
   #       + G
-  #       #{@master[2]} D
+  #       #{@main[2]} D
   #       diff --git a/f.txt b/f.txt
   #       index 96d80cd..02358d2 100644
   #       --- a/f.txt
@@ -495,7 +496,7 @@ describe Command::Log do
   #       #{@topic[1]} G
   #       #{@topic[2]} F
   #       #{@topic[3]} E
-  #       #{@master[5]} A
+  #       #{@main[5]} A
   #     LOGS
   #   end
   #
@@ -503,7 +504,7 @@ describe Command::Log do
   #     before do
   #       time = Time.now
   #
-  #       jit_cmd 'branch', 'aba', 'master~4'
+  #       jit_cmd 'branch', 'aba', 'main~4'
   #       jit_cmd 'checkout', 'aba'
   #
   #       %w[C 0].each { |n| commit_tree n, { 'g.txt' => n }, time + 1 }
@@ -519,7 +520,7 @@ describe Command::Log do
   #         #{@topic[1]} G
   #         #{@topic[2]} F
   #         #{@topic[3]} E
-  #         #{@master[5]} A
+  #         #{@main[5]} A
   #       LOGS
   #     end
   #   end
