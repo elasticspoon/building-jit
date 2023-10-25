@@ -8,7 +8,6 @@ class Color
 
   def self.format(string, style)
     code = SGR_COLORS.fetch(style)
-
     "\e[#{code}m#{string}\e[m"
   end
 end

@@ -1,8 +1,8 @@
-require "fileutils"
-require "pathname"
+require 'fileutils'
+require 'pathname'
 
-require_relative "../lib/command"
-require_relative "../lib/repository"
+require_relative '../lib/command'
+require_relative '../lib/repository'
 class Database
   def store_mock_object(object)
     content = serialize_object(object)
@@ -14,7 +14,7 @@ module CommandHelper
   def self.included(suite)
     suite.class_eval do
       def setup
-        jit_cmd("init", repo_path.to_s)
+        jit_cmd('init', repo_path.to_s)
       end
 
       def teardown
@@ -41,15 +41,24 @@ module CommandHelper
     @env[key] = val
   end
 
-  def commit(message)
-    set_env("GIT_AUTHOR_NAME", "A. U. Thor")
-    set_env("GIT_AUTHOR_EMAIL", "author@example.com")
-    set_stdin(message)
-    jit_cmd("commit")
+  def commit(message, time=nil, author=true)
+    if author
+      set_env('GIT_AUTHOR_NAME', 'A. U. Thor')
+      set_env('GIT_AUTHOR_EMAIL', 'author@example.com')
+    end
+    Time.stub(:now, time || Time.now) { jit_cmd 'commit', '-m', message }
+  end
+
+  def load_commit(expression)
+    repo.database.load(resolve_revision(expression))
+  end
+
+  def resolve_revision(expression)
+    Revision.new(repo, expression).resolve
   end
 
   def commit_all(message)
-    jit_cmd("add", ".")
+    jit_cmd('add', '.')
     commit(message)
   end
 
@@ -67,11 +76,11 @@ module CommandHelper
   end
 
   def repo_path
-    Pathname.new(File.expand_path("test_repo", __dir__))
+    Pathname.new(File.expand_path('test_repo', __dir__))
   end
 
   def repo
-    @repo ||= Repository.new(repo_path.join(".git"))
+    @repo ||= Repository.new(repo_path.join('.git'))
   end
 
   def assert_index(expected)
@@ -89,7 +98,7 @@ module CommandHelper
     assert_equal(expected, actual)
   end
 
-  def assert_workspace_contents(expected, repo = self.repo)
+  def assert_workspace_contents(expected, repo=self.repo)
     files = {}
 
     repo.workspace.list_files.sort.each do |pathname|
@@ -127,7 +136,7 @@ module CommandHelper
     assert_output(@stdout, expected)
   end
 
-  def assert_ref(name, value = nil)
+  def assert_ref(name, value=nil)
     ref_value = repo.refs.read_ref(name)
 
     if value
@@ -148,7 +157,7 @@ module CommandHelper
   end
 
   def assert_repo_status(expected)
-    jit_cmd("status", "--porcelain")
+    jit_cmd('status', '--porcelain')
     assert_stdout(expected)
   end
 

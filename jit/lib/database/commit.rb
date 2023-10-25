@@ -1,6 +1,7 @@
 class Database
   class Commit
-    attr_accessor :oid, :tree, :parent, :author
+    attr_accessor :oid
+    attr_reader :tree, :parent, :author, :message
 
     def initialize(parent, tree, author, message)
       @parent = parent
@@ -10,7 +11,7 @@ class Database
     end
 
     def type
-      "commit"
+      'commit'
     end
 
     def to_s
@@ -20,7 +21,7 @@ class Database
       lines.push("parent #{@parent}") if @parent
       lines.push("author #{@author}")
       lines.push("commiter #{@author}")
-      lines.push("")
+      lines.push('')
       lines.push(@message)
 
       lines.join("\n")
@@ -31,16 +32,16 @@ class Database
 
       loop do
         line = scanner.scan_until(/\n/).strip
-        break if line == ""
+        break if line == ''
 
         header, value = line.split(/ +/, 2)
         headers[header] = value
       end
 
       Commit.new(
-        headers["parent"],
-        headers["tree"],
-        Author.parse(headers["author"]),
+        headers['parent'],
+        headers['tree'],
+        Author.parse(headers['author']),
         scanner.rest
       )
     end

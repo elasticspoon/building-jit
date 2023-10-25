@@ -1,4 +1,4 @@
-require_relative "../lib/lockfile"
+require_relative '../lib/lockfile'
 
 class Refs
   LockDenied = Class.new(StandardError)
@@ -35,12 +35,12 @@ class Refs
 | @\{
 | [\x00-\x20*:?\[\\^~\x7f]
 }x
-  HEAD = "HEAD".freeze
+  HEAD = 'HEAD'.freeze
 
   def initialize(pathname)
     @pathname = pathname
-    @refs_path = pathname.join("refs")
-    @heads_path = @refs_path.join("heads")
+    @refs_path = pathname.join('refs')
+    @heads_path = @refs_path.join('heads')
   end
 
   def update_head(oid)
@@ -77,7 +77,7 @@ class Refs
     path.nil? ? nil : read_symref(path)
   end
 
-  def current_ref(source = HEAD)
+  def current_ref(source=HEAD)
     ref = read_oid_or_symref(@pathname.join(source))
 
     case ref
@@ -93,7 +93,7 @@ class Refs
   end
 
   def list_refs(dirname)
-    invalid_dirs = [".", ".."]
+    invalid_dirs = ['.', '..']
     names = Dir.entries(dirname) - invalid_dirs
 
     names.map { |name| dirname.join(name) }.flat_map do |path|
@@ -207,12 +207,13 @@ class Refs
   end
 
   def branch_path(branch_name)
-    @pathname.join("refs/heads").join(branch_name)
+    @pathname.join('refs/heads').join(branch_name)
   end
 
   def delete_parent_directories(path)
     path.dirname.ascend do |dir|
       break if dir == @heads_path
+
       begin
         Dir.rmdir(dir)
       rescue Errno::ENOTEMPTY

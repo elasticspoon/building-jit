@@ -1,4 +1,4 @@
-require_relative "./base"
+require_relative 'base'
 
 module Command
   class Branch < Base
@@ -32,12 +32,12 @@ module Command
     end
 
     def define_options
-      @parser.on("-v", "--verbose") { @options[:verbose] = true }
+      @parser.on('-v', '--verbose') { @options[:verbose] = true }
 
-      @parser.on("-d", "--delete") { @options[:delete] = true }
-      @parser.on("-f", "--force") { @options[:force] = true }
+      @parser.on('-d', '--delete') { @options[:delete] = true }
+      @parser.on('-f', '--force') { @options[:force] = true }
 
-      @parser.on "-D" do
+      @parser.on '-D' do
         @options[:delete] = true
         @options[:force] = true
       end
@@ -66,11 +66,11 @@ module Command
     end
 
     def extended_branch_info(ref, max_width)
-      return "" unless @options[:verbose]
+      return '' unless @options[:verbose]
 
       commit = repo.database.load(ref.read_oid)
       short = repo.database.short_oid(commit.oid)
-      space = " " * (max_width - ref.short_name.length)
+      space = ' ' * (max_width - ref.short_name.length)
 
       "#{space} #{short} #{commit.title_line}"
     end
@@ -91,7 +91,7 @@ module Command
 
     def delete_branch(branch_name)
       unless @options[:force]
-        warn "Unforced branch deletion not implemented"
+        warn 'Unforced branch deletion not implemented'
         return nil
       end
 
